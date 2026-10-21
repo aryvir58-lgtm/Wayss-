@@ -14,7 +14,7 @@ const demoPosts:Post[] = [
  {id:"demo-2",author:"Rohitt",handle:"rohitt",avatar:"R",text:"Less clutter. More connection.",likes:18,comments:3,time:"12m",kind:"Signal"}
 ];
 
-function App(){
+export default function App(){
  const [screen,setScreen]=useState<Screen>("Feed");
  const [query,setQuery]=useState("");
  const [composer,setComposer]=useState(false);
@@ -77,7 +77,6 @@ function App(){
        {screen==="You" && <Profile user={user} onSignIn={()=>setAuthOpen(true)} onSettings={()=>setSettings(true)}/>}
        {screen==="Create" && <Feed posts={filtered} liked={liked} setLiked={setLiked} saved={saved} setSaved={setSaved}/>}
      </div>
-   </main>
 
    <div className="mobile-nav">{nav.map(([n,I])=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}</div>
 
@@ -92,15 +91,15 @@ function Feed({posts,liked,setLiked,saved,setSaved}:{posts:Post[],liked:any,setL
    <div className="glimpse-row"><div className="glimpse add"><Plus size={20}/><span>Glimpse</span></div>{["A","M","K","S","N"].map(x=><div className="glimpse" key={x}><div className="gavatar">{x}</div><span>Glimpse</span></div>)}</div>
    <div className="feed">{posts.map(p=><article className="post" key={p.id}>
      <div className="post-head"><div className="avatar">{p.avatar}</div><div className="who"><b>{p.author}</b><span>@{p.handle} · {p.time}</span></div><button className="icon"><MoreHorizontal size={18}/></button></div>
-     <div className="kind">{p.kind}</div><p className="post-text">{p.text}</p>{p.image&&<img className="post-image" src={p.image}/>}
+     <div className="kind">{p.kind}</div><p className="post-text">{p.text}</p>{p.image&&<img className="post-image" src={p.image}/>} 
      <div className="post-actions"><button onClick={()=>setLiked({...liked,[p.id]:!liked[p.id]})} className={liked[p.id]?"liked":""}><Heart size={18} fill={liked[p.id]?"currentColor":"none"}/><span>{p.likes+(liked[p.id]?1:0)}</span></button><button><MessageCircle size={18}/><span>{p.comments}</span></button><button onClick={()=>setSaved({...saved,[p.id]:!saved[p.id]})} className={saved[p.id]?"saved":""}><Bookmark size={18} fill={saved[p.id]?"currentColor":"none"}/></button></div>
    </article>)}</div>
  </section>
 }
 
 function Orbit({query}:{query:string}){return <section><div className="page-head"><div><p className="eyebrow">DISCOVER</p><h1>Orbit</h1></div></div><div className="orbit-grid">
- {["People","Topics","Creators","Circles"].map((x,i)=><div className="discover-card" key={x}><div className="discover-icon">{i===0?<Users/>:i===1?<Sparkles/>:i===2?<Radio/>:<Compass/>}</div><h3>{x}</h3><p>{query?`Results related to “${query}”`:"Explore what interests you."}</p><button>Explore <ChevronRight size={15}/></button></div>)}</div>
- <div className="section-title"><h2>Suggested connections</h2><span>Based on your choices</span></div><div className="people">{["Maya","Kian","Sia"].map(x=><div className="person" key={x}><div className="avatar">{x[0]}</div><div><b>{x}</b><span>@{x.toLowerCase()} · Creator</span></div><button className="outline">Connect</button></div>)}</div></section>}
+ {["People","Topics","Creators","Circles"].map((x,i)=><div className="discover-card" key={x}><div className="discover-icon">{i===0?<Users/>:i===1?<Sparkles/>:i===2?<Radio/>:<Compass/>}</div><h3>{x}</h3><p>{query?`Results related to “${query}”`:"Explore what interests you."}</p><button>Explore <ChevronRight size={15}/></button></div>)}
+</div><div className="section-title"><h2>Suggested connections</h2><span>Based on your choices</span></div><div className="people">{["Maya","Kian","Sia"].map(x=><div className="person" key={x}><div className="avatar">{x[0]}</div><div><b>{x}</b><span>@{x.toLowerCase()} · Creator</span></div><button className="outline">Connect</button></div>)}</div></section>}
 
 function Flux(){return <section><div className="page-head"><div><p className="eyebrow">SHORT VIDEO</p><h1>Flux</h1></div></div><div className="empty"><Video size={32}/><h2>Flux is ready for your videos.</h2><p>Add short-form video creation and playback when you connect your media storage.</p><button className="primary">Create a Flux</button></div></section>}
 
