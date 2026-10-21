@@ -77,6 +77,7 @@ export default function App(){
        {screen==="You" && <Profile user={user} onSignIn={()=>setAuthOpen(true)} onSettings={()=>setSettings(true)}/>}
        {screen==="Create" && <Feed posts={filtered} liked={liked} setLiked={setLiked} saved={saved} setSaved={setSaved}/>}
      </div>
+   </main>
 
    <div className="mobile-nav">{nav.map(([n,I])=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}</div>
 
