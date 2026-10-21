@@ -92,6 +92,7 @@ export default function App(){
    {composer && <Composer onClose={()=>setComposer(false)} onPublish={(p)=>{setPosts(x=>[p,...x]);setComposer(false);setScreen("Feed")}}/>}
    {settings && <SettingsPanel dark={dark} setDark={setDark} onClose={()=>setSettings(false)} user={user}/>}
    {authOpen && <Auth onClose={()=>setAuthOpen(false)} email={email} setEmail={setEmail} password={password} setPassword={setPassword} onSignIn={signIn} onGoogle={signInWithGoogle} onSignUp={signUp} status={status}/>}
+   </main>
  </div>
 }
 
