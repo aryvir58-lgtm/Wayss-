@@ -1,260 +1,48 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Bell, Bookmark, ChevronRight, Compass, Heart, Home, ImagePlus, LogIn,
-  MessageCircle, MoreHorizontal, Plus, Search, Settings, Shield, Sparkles,
-  UserRound, Video, X, Send, Lock, Users, Radio, Moon, Sun, LogOut
-} from "lucide-react";
-import { supabase, supabaseConfigured } from "./supabase";
+import { Bell, Bookmark, Check, ChevronRight, Compass, Heart, Home, LogIn, LogOut, MessageCircle, MoreHorizontal, Plus, Search, Settings, Shield, Sparkles, UserRound, Video, X, Send, Lock, Users, Radio, Moon, Sun, Trash2 } from "lucide-react";
+import { supabase } from "./supabase";
 
-type Screen = "Feed"|"Orbit"|"Create"|"Flux"|"You";
-type Post = {
-  id:string;
-  author:string;
-  handle:string;
-  avatar:string;
-  text:string;
-  image?:string;
-  likes:number;
-  comments:number;
-  time:string;
-  kind:"Echo"|"Signal";
-  liked?:boolean;
-  saved?:boolean;
-};
-
-type DbPost = {
-  id:string;
-  author_id:string;
-  kind:"echo"|"signal"|"glimpse"|"flux";
-  body:string|null;
-  media_url:string|null;
-  created_at:string;
-  profiles:{username:string|null;display_name:string|null;avatar_url:string|null}|null;
-  post_likes:{user_id:string}[];
-  comments:{id:string}[];
-  saved_posts:{user_id:string}[];
-};
-
-const kindLabel = (kind:DbPost["kind"]):Post["kind"] => kind === "signal" ? "Signal" : "Echo";
-const timeAgo = (value:string) => {
-  const seconds = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if(seconds < 60) return "Now";
-  const minutes = Math.floor(seconds / 60);
-  if(minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if(hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `${days}d`;
-};
-
+type Screen = "Feed" | "Orbit" | "Create" | "Flux" | "You";
+type ProfileRow = { id:string; username:string|null; display_name:string|null; bio:string|null; avatar_url:string|null; is_private:boolean; active_status:boolean };
+type Post = { id:string; author_id:string; author:string; handle:string; avatar:string; text:string; image?:string; likes:number; comments:number; time:string; kind:"Echo"|"Signal"; liked:boolean; saved:boolean };
+type Comment = { id:string; post_id:string; author_id:string; body:string; created_at:string; profile?:{username:string|null;display_name:string|null;avatar_url:string|null}|null };
+type Notification = { id:string; actor_id:string|null; type:string; payload:any; read_at:string|null; created_at:string; actor?:{username:string|null;display_name:string|null;avatar_url:string|null}|null };
+const timeAgo=(value:string)=>{const s=Math.max(1,Math.floor((Date.now()-new Date(value).getTime())/1000));if(s<60)return"Now";const m=Math.floor(s/60);if(m<60)return`${m}m`;const h=Math.floor(m/60);if(h<24)return`${h}h`;return`${Math.floor(h/24)}d`;};
+const initial=(p:ProfileRow|null)=>p?.display_name?.[0]?.toUpperCase()||p?.username?.[0]?.toUpperCase()||"W";
 export default function App(){
- const [screen,setScreen]=useState<Screen>("Feed");
- const [query,setQuery]=useState("");
- const [composer,setComposer]=useState(false);
- const [settings,setSettings]=useState(false);
- const [dark,setDark]=useState(true);
- const [posts,setPosts]=useState<Post[]>([]);
- const [user,setUser]=useState<any>(null);
- const [profile,setProfile]=useState<any>(null);
- const [authOpen,setAuthOpen]=useState(false);
- const [email,setEmail]=useState("");
- const [password,setPassword]=useState("");
- const [status,setStatus]=useState("");
- const [loadingPosts,setLoadingPosts]=useState(true);
- const [backendError,setBackendError]=useState("");
-
- useEffect(()=>{
-   document.documentElement.dataset.theme=dark?"dark":"light";
- },[dark]);
-
- useEffect(()=>{
-   if(!supabase) return;
-   let active = true;
-   supabase.auth.getSession().then(({data})=>{ if(active) setUser(data.session?.user ?? null); });
-   const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setUser(s?.user ?? null));
-   return ()=>{ active=false; subscription.unsubscribe(); };
- },[]);
-
- useEffect(()=>{
-   if(!supabase || !user) { setProfile(null); return; }
-   supabase.from("profiles").select("*").eq("id",user.id).maybeSingle().then(({data,error})=>{
-     if(error) setBackendError(error.message);
-     else setProfile(data);
-   });
- },[user]);
-
- useEffect(()=>{
-   loadPosts();
- },[user]);
-
- async function loadPosts(){
-   if(!supabase){
-     setLoadingPosts(false);
-     setBackendError("Supabase is not configured in this deployment.");
-     return;
-   }
-   setLoadingPosts(true);
-   setBackendError("");
-   const {data,error}=await supabase
-     .from("posts")
-     .select(`id,author_id,kind,body,media_url,created_at,
-       profiles!posts_author_id_fkey(username,display_name,avatar_url),
-       post_likes(user_id),comments(id),saved_posts(user_id)`)
-     .order("created_at",{ascending:false})
-     .limit(50);
-   if(error){
-     setPosts([]);
-     setBackendError(error.message);
-     setLoadingPosts(false);
-     return;
-   }
-   const rows=(data??[]) as unknown as DbPost[];
-   setPosts(rows.map(row=>({
-     id:row.id,
-     author:row.profiles?.display_name || row.profiles?.username || "WAYSS user",
-     handle:row.profiles?.username || "user",
-     avatar:row.profiles?.avatar_url || (row.profiles?.display_name?.[0] || "W"),
-     text:row.body || "",
-     image:row.media_url || undefined,
-     likes:row.post_likes?.length || 0,
-     comments:row.comments?.length || 0,
-     time:timeAgo(row.created_at),
-     kind:kindLabel(row.kind),
-     liked:!!user && !!row.post_likes?.some(x=>x.user_id===user.id),
-     saved:!!user && !!row.saved_posts?.some(x=>x.user_id===user.id)
-   })));
-   setLoadingPosts(false);
- }
-
- async function ensureProfile(){
-   if(!supabase || !user) return false;
-   const payload={
-     id:user.id,
-     display_name:profile?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "WAYSS user",
-     username:profile?.username || user.user_metadata?.user_name || null
-   };
-   const {error}=await supabase.from("profiles").upsert(payload,{onConflict:"id"});
-   if(error){setBackendError(error.message);return false;}
-   const {data}=await supabase.from("profiles").select("*").eq("id",user.id).maybeSingle();
-   setProfile(data);
-   return true;
- }
-
- async function signIn(){
-   if(!supabase){setStatus("Connect Supabase first.");return;}
-   const {error}=await supabase.auth.signInWithPassword({email,password});
-   setStatus(error?.message ?? "Signed in."); if(!error)setAuthOpen(false);
- }
- async function signInWithGoogle(){
-   if(!supabase){setStatus("Connect Supabase first.");return;}
-   setStatus("Opening Google…");
-   const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
-   if(error)setStatus(error.message);
- }
- async function signUp(){
-   if(!supabase){setStatus("Connect Supabase first.");return;}
-   const {error}=await supabase.auth.signUp({email,password});
-   setStatus(error?.message ?? "Account created. Check your email if confirmation is enabled.");
- }
- async function signOut(){if(supabase) await supabase.auth.signOut();setUser(null);setProfile(null);}
-
- async function toggleLike(post:Post){
-   if(!supabase || !user){setAuthOpen(true);return;}
-   const next=!post.liked;
-   setPosts(items=>items.map(p=>p.id===post.id?{...p,liked:next,likes:Math.max(0,p.likes+(next?1:-1))}:p));
-   const result=next
-     ? await supabase.from("post_likes").insert({post_id:post.id,user_id:user.id})
-     : await supabase.from("post_likes").delete().eq("post_id",post.id).eq("user_id",user.id);
-   if(result.error){
-     setPosts(items=>items.map(p=>p.id===post.id?{...p,liked:!next,likes:Math.max(0,p.likes+(next?-1:1))}:p));
-     setBackendError(result.error.message);
-   }
- }
-
- async function toggleSave(post:Post){
-   if(!supabase || !user){setAuthOpen(true);return;}
-   const next=!post.saved;
-   setPosts(items=>items.map(p=>p.id===post.id?{...p,saved:next}:p));
-   const result=next
-     ? await supabase.from("saved_posts").insert({post_id:post.id,user_id:user.id})
-     : await supabase.from("saved_posts").delete().eq("post_id",post.id).eq("user_id",user.id);
-   if(result.error){
-     setPosts(items=>items.map(p=>p.id===post.id?{...p,saved:!next}:p));
-     setBackendError(result.error.message);
-   }
- }
-
- async function publishPost(kind:"Echo"|"Signal",text:string){
-   if(!supabase || !user){setAuthOpen(true);return false;}
-   const ready=await ensureProfile();
-   if(!ready) return false;
-   const {data,error}=await supabase.from("posts").insert({author_id:user.id,kind:kind.toLowerCase(),body:text.trim(),audience:"public"}).select("id").single();
-   if(error){setBackendError(error.message);return false;}
-   setComposer(false);
-   setScreen("Feed");
-   await loadPosts();
-   return !!data;
- }
-
+ const [screen,setScreen]=useState<Screen>("Feed"),[query,setQuery]=useState(""),[composer,setComposer]=useState(false),[settings,setSettings]=useState(false),[dark,setDark]=useState(true),[user,setUser]=useState<any>(null),[profile,setProfile]=useState<ProfileRow|null>(null),[posts,setPosts]=useState<Post[]>([]),[connections,setConnections]=useState<any[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[authOpen,setAuthOpen]=useState(false),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[status,setStatus]=useState(""),[notifications,setNotifications]=useState<Notification[]>([]),[notificationOpen,setNotificationOpen]=useState(false),[commentsPost,setCommentsPost]=useState<Post|null>(null);
+ useEffect(()=>{document.documentElement.dataset.theme=dark?"dark":"light";},[dark]);
+ useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>setUser(data.session?.user??null));const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setUser(s?.user??null));return()=>subscription.unsubscribe();},[]);
+ useEffect(()=>{if(!supabase||!user){setProfile(null);setConnections([]);return;}loadProfile();loadConnections();loadNotifications();},[user]);
+ useEffect(()=>{loadPosts();},[user]);
+ useEffect(()=>{if(!supabase||!user)return;const channel=supabase.channel(`wayss-phase3-${user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"comments"},()=>loadPosts()).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`recipient_id=eq.${user.id}`},()=>loadNotifications()).subscribe();return()=>{supabase.removeChannel(channel);};},[user]);
+ async function loadProfile(){if(!supabase||!user)return;const {data,error}=await supabase.from("profiles").select("*").eq("id",user.id).maybeSingle();if(error)setError(error.message);else setProfile(data);}
+ async function loadConnections(){if(!supabase||!user)return;const {data,error}=await supabase.from("connections").select("*").or(`follower_id.eq.${user.id},following_id.eq.${user.id}`);if(!error)setConnections(data||[]);}
+ async function loadNotifications(){if(!supabase||!user)return;const {data,error}=await supabase.from("notifications").select("id,actor_id,type,payload,read_at,created_at,actor:profiles!notifications_actor_id_fkey(username,display_name,avatar_url)").order("created_at",{ascending:false}).limit(30);if(!error)setNotifications((data||[]) as any);}
+ async function loadPosts(){if(!supabase){setLoading(false);setError("Supabase is not configured.");return;}setLoading(true);setError("");const {data,error}=await supabase.from("posts").select(`id,author_id,kind,body,media_url,created_at,profiles!posts_author_id_fkey(username,display_name,avatar_url),post_likes(user_id),comments(id),saved_posts(user_id)`).order("created_at",{ascending:false}).limit(50);if(error){setError(error.message);setPosts([]);setLoading(false);return;}const rows:any[]=data||[];setPosts(rows.map(r=>({id:r.id,author_id:r.author_id,author:r.profiles?.display_name||r.profiles?.username||"WAYSS user",handle:r.profiles?.username||"user",avatar:r.profiles?.avatar_url||r.profiles?.display_name?.[0]||"W",text:r.body||"",image:r.media_url||undefined,likes:r.post_likes?.length||0,comments:r.comments?.length||0,time:timeAgo(r.created_at),kind:r.kind==="signal"?"Signal":"Echo",liked:!!user&&!!r.post_likes?.some((x:any)=>x.user_id===user.id),saved:!!user&&!!r.saved_posts?.some((x:any)=>x.user_id===user.id)})));setLoading(false);}
+ async function ensureProfile(){if(!supabase||!user)return false;const payload={id:user.id,display_name:profile?.display_name||user.user_metadata?.full_name||user.email?.split("@")[0]||"WAYSS user",username:profile?.username||user.user_metadata?.user_name||null,bio:profile?.bio||"",avatar_url:profile?.avatar_url||null,is_private:profile?.is_private||false};const {error}=await supabase.from("profiles").upsert(payload,{onConflict:"id"});if(error){setError(error.message);return false;}await loadProfile();return true;}
+ async function toggleLike(p:Post){if(!supabase||!user){setAuthOpen(true);return;}const next=!p.liked;setPosts(xs=>xs.map(x=>x.id===p.id?{...x,liked:next,likes:Math.max(0,x.likes+(next?1:-1))}:x));const r=next?await supabase.from("post_likes").insert({post_id:p.id,user_id:user.id}):await supabase.from("post_likes").delete().eq("post_id",p.id).eq("user_id",user.id);if(r.error){setPosts(xs=>xs.map(x=>x.id===p.id?{...x,liked:!next,likes:Math.max(0,x.likes+(next?-1:1))}:x));setError(r.error.message);}}
+ async function toggleSave(p:Post){if(!supabase||!user){setAuthOpen(true);return;}const next=!p.saved;setPosts(xs=>xs.map(x=>x.id===p.id?{...x,saved:next}:x));const r=next?await supabase.from("saved_posts").insert({post_id:p.id,user_id:user.id}):await supabase.from("saved_posts").delete().eq("post_id",p.id).eq("user_id",user.id);if(r.error){setPosts(xs=>xs.map(x=>x.id===p.id?{...x,saved:!next}:x));setError(r.error.message);}}
+ async function publish(kind:"Echo"|"Signal",body:string){if(!supabase||!user){setAuthOpen(true);return;}if(!await ensureProfile())return;const r=await supabase.from("posts").insert({author_id:user.id,kind:kind.toLowerCase(),body:body.trim(),audience:"public"});if(r.error)setError(r.error.message);else{setComposer(false);await loadPosts();}}
+ async function connect(target:ProfileRow){if(!supabase||!user){setAuthOpen(true);return;}if(target.id===user.id)return;const existing=connections.find(c=>(c.follower_id===user.id&&c.following_id===target.id)||(c.follower_id===target.id&&c.following_id===user.id));if(existing){if(existing.follower_id===user.id)await supabase.from("connections").delete().eq("follower_id",user.id).eq("following_id",target.id);else if(existing.status==="pending")await supabase.from("connections").delete().eq("follower_id",target.id).eq("following_id",user.id);await loadConnections();return;}const r=await supabase.from("connections").insert({follower_id:user.id,following_id:target.id,status:target.is_private?"pending":"accepted"});if(r.error)setError(r.error.message);else await loadConnections();}
+ async function acceptConnection(c:any){if(!supabase||!user)return;const r=await supabase.from("connections").update({status:"accepted"}).eq("follower_id",c.follower_id).eq("following_id",user.id);if(r.error)setError(r.error.message);else await loadConnections();}
+ async function updateProfile(patch:Partial<ProfileRow>){if(!supabase||!user)return;const r=await supabase.from("profiles").update(patch).eq("id",user.id);if(r.error)setError(r.error.message);else await loadProfile();}
+ async function signIn(){if(!supabase)return;const r=await supabase.auth.signInWithPassword({email,password});setStatus(r.error?.message||"Signed in.");if(!r.error)setAuthOpen(false);}
+ async function google(){if(!supabase)return;const r=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});if(r.error)setStatus(r.error.message);}
+ async function signUp(){if(!supabase)return;const r=await supabase.auth.signUp({email,password});setStatus(r.error?.message||"Account created. Check email if confirmation is enabled.");}
+ async function signOut(){if(supabase)await supabase.auth.signOut();setUser(null);}
+ async function markNotificationsRead(){if(!supabase||!user)return;await supabase.from("notifications").update({read_at:new Date().toISOString()}).eq("recipient_id",user.id).is("read_at",null);await loadNotifications();}
  const filtered=useMemo(()=>posts.filter(p=>(p.text+" "+p.author+" "+p.handle).toLowerCase().includes(query.toLowerCase())),[posts,query]);
+ const unread=notifications.filter(n=>!n.read_at).length;
  const nav=[["Feed",Home],["Orbit",Compass],["Create",Plus],["Flux",Video],["You",UserRound]] as const;
-
- return <div className="app">
-   <aside className="sidebar">
-     <div className="brand"><div className="logo">W</div><div><b>WAYSS</b><small>Social, Beyond the Feed.</small></div></div>
-     <nav>{nav.map(([n,I])=><button key={n} className={screen===n?"nav active":"nav"} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={19}/><span>{n}</span></button>)}</nav>
-     <div className="side-bottom">
-       <button className="nav" onClick={()=>setSettings(true)}><Settings size={19}/><span>Settings</span></button>
-       {user?<button className="nav" onClick={signOut}><LogOut size={19}/><span>Log out</span></button>:<button className="nav" onClick={()=>setAuthOpen(true)}><LogIn size={19}/><span>Sign in</span></button>}
-     </div>
-   </aside>
-
-   <main>
-     <header className="topbar">
-       <div className="mobile-brand"><div className="logo small">W</div><b>WAYSS</b></div>
-       <div className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search WAYSS"/></div>
-       <div className="top-actions"><button className="icon" title="Hush"><MessageCircle size={19}/></button><button className="icon" title="Notifications"><Bell size={19}/></button><button className="avatar">{user?.email?.[0]?.toUpperCase()||"Y"}</button></div>
-     </header>
-
-     <div className="content">
-       {screen==="Feed" && <Feed posts={filtered} loading={loadingPosts} error={backendError} onRetry={loadPosts} onLike={toggleLike} onSave={toggleSave} onSignIn={()=>setAuthOpen(true)}/>}
-       {screen==="Orbit" && <Orbit query={query}/>}
-       {screen==="Flux" && <Flux/>}
-       {screen==="You" && <Profile user={user} profile={profile} onSignIn={()=>setAuthOpen(true)} onSettings={()=>setSettings(true)}/>}
-       {screen==="Create" && <Feed posts={filtered} loading={loadingPosts} error={backendError} onRetry={loadPosts} onLike={toggleLike} onSave={toggleSave} onSignIn={()=>setAuthOpen(true)}/>}
-     </div>
-
-   <div className="mobile-nav">{nav.map(([n,I])=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}</div>
-
-   {composer && <Composer onClose={()=>setComposer(false)} onPublish={publishPost} user={user}/>} 
-   {settings && <SettingsPanel dark={dark} setDark={setDark} onClose={()=>setSettings(false)} user={user}/>} 
-   {authOpen && <Auth onClose={()=>setAuthOpen(false)} email={email} setEmail={setEmail} password={password} setPassword={setPassword} onSignIn={signIn} onGoogle={signInWithGoogle} onSignUp={signUp} status={status}/>} 
-   </main>
- </div>
+ return <div className="app"><aside className="sidebar"><div className="brand"><div className="logo">W</div><div><b>WAYSS</b><small>Social, Beyond the Feed.</small></div></div><nav>{nav.map(([n,I])=><button key={n} className={screen===n?"nav active":"nav"} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={19}/><span>{n}</span></button>)}</nav><div className="side-bottom"><button className="nav" onClick={()=>setSettings(true)}><Settings size={19}/><span>Settings</span></button>{user?<button className="nav" onClick={signOut}><LogOut size={19}/><span>Log out</span></button>:<button className="nav" onClick={()=>setAuthOpen(true)}><LogIn size={19}/><span>Sign in</span></button>}</div></aside><main><header className="topbar"><div className="mobile-brand"><div className="logo small">W</div><b>WAYSS</b></div><div className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search WAYSS"/></div><div className="top-actions"><button className="icon" title="Hush"><MessageCircle size={19}/></button><button className="icon notification-button" title="Notifications" onClick={()=>{setNotificationOpen(true);markNotificationsRead();}}><Bell size={19}/>{unread>0&&<span className="notification-dot">{unread>9?"9+":unread}</span>}</button><button className="avatar" onClick={()=>setScreen("You")}>{profile?initial(profile):user?.email?.[0]?.toUpperCase()||"Y"}</button></div></header><div className="content">{screen==="Feed"&&<Feed posts={filtered} loading={loading} error={error} onRetry={loadPosts} onLike={toggleLike} onSave={toggleSave} onComment={setCommentsPost} onSignIn={()=>setAuthOpen(true)}/>} {screen==="Orbit"&&<Orbit query={query} user={user} connections={connections} onConnect={connect}/>} {screen==="Flux"&&<Flux/>}{screen==="You"&&<Profile user={user} profile={profile} connections={connections} onSignIn={()=>setAuthOpen(true)} onSave={updateProfile} onAccept={acceptConnection}/>} {screen==="Create"&&<Feed posts={filtered} loading={loading} error={error} onRetry={loadPosts} onLike={toggleLike} onSave={toggleSave} onComment={setCommentsPost} onSignIn={()=>setAuthOpen(true)}/>}</div><div className="mobile-nav">{nav.map(([n,I])=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}</div>{composer&&<Composer onClose={()=>setComposer(false)} onPublish={publish} user={user}/>} {commentsPost&&<CommentsModal post={commentsPost} user={user} onClose={()=>setCommentsPost(null)} onChanged={loadPosts}/>} {notificationOpen&&<NotificationsPanel notifications={notifications} onClose={()=>setNotificationOpen(false)}/>} {settings&&<SettingsPanel dark={dark} setDark={setDark} onClose={()=>setSettings(false)} user={user}/>} {authOpen&&<Auth onClose={()=>setAuthOpen(false)} email={email} setEmail={setEmail} password={password} setPassword={setPassword} onSignIn={signIn} onGoogle={google} onSignUp={signUp} status={status}/>}</main></div>;
 }
-
-function Feed({posts,loading,error,onRetry,onLike,onSave,onSignIn}:{posts:Post[],loading:boolean,error:string,onRetry:()=>void,onLike:(p:Post)=>void,onSave:(p:Post)=>void,onSignIn:()=>void}){
- return <section><div className="page-head"><div><p className="eyebrow">YOUR WORLD</p><h1>Feed</h1></div><div className="filters"><button className="chip active">For You</button><button className="chip">Connected</button></div></div>
-   <div className="glimpse-row"><div className="glimpse add"><Plus size={20}/><span>Glimpse</span></div>{["A","M","K","S","N"].map(x=><div className="glimpse" key={x}><div className="gavatar">{x}</div><span>Glimpse</span></div>)}</div>
-   {error&&<div className="empty compact"><p>{error}</p><button className="outline" onClick={onRetry}>Retry</button></div>}
-   {loading?<div className="empty"><Sparkles size={30}/><h2>Loading your feed…</h2><p>Getting the latest posts from WAYSS.</p></div>:!error && posts.length===0?<div className="empty"><Home size={32}/><h2>Your feed, without the clutter.</h2><p>Connect with people and create your first post.</p><button className="primary" onClick={onSignIn}>Sign in to start</button></div>:<div className="feed">{posts.map(p=><article className="post" key={p.id}>
-     <div className="post-head"><div className="avatar">{p.avatar.startsWith("http")?<img src={p.avatar} alt=""/>:p.avatar}</div><div className="who"><b>{p.author}</b><span>@{p.handle} · {p.time}</span></div><button className="icon"><MoreHorizontal size={18}/></button></div>
-     <div className="kind">{p.kind}</div><p className="post-text">{p.text}</p>{p.image&&<img className="post-image" src={p.image} alt=""/>}
-     <div className="post-actions"><button onClick={()=>onLike(p)} className={p.liked?"liked":""}><Heart size={18} fill={p.liked?"currentColor":"none"}/><span>{p.likes}</span></button><button><MessageCircle size={18}/><span>{p.comments}</span></button><button onClick={()=>onSave(p)} className={p.saved?"saved":""}><Bookmark size={18} fill={p.saved?"currentColor":"none"}/></button></div>
-   </article>)}</div>}
- </section>;
-}
-
-function Orbit({query}:{query:string}){return <section><div className="page-head"><div><p className="eyebrow">DISCOVER</p><h1>Orbit</h1></div></div><div className="orbit-grid">
- {["People","Topics","Creators","Circles"].map((x,i)=><div className="discover-card" key={x}><div className="discover-icon">{i===0?<Users/>:i===1?<Sparkles/>:i===2?<Radio/>:<Compass/>}</div><h3>{x}</h3><p>{query?`Results related to “${query}”`:"Explore what interests you."}</p><button>Explore <ChevronRight size={15}/></button></div>)}
-</div><div className="section-title"><h2>Suggested connections</h2><span>Based on your choices</span></div><div className="people">{["Maya","Kian","Sia"].map(x=><div className="person" key={x}><div className="avatar">{x[0]}</div><div><b>{x}</b><span>@{x.toLowerCase()} · Creator</span></div><button className="outline">Connect</button></div>)}</div></section>}
-
-function Flux(){return <section><div className="page-head"><div><p className="eyebrow">SHORT VIDEO</p><h1>Flux</h1></div></div><div className="empty"><Video size={32}/><h2>Flux is ready for your videos.</h2><p>Add short-form video creation and playback when you connect your media storage.</p><button className="primary">Create a Flux</button></div></section>}
-
-function Profile({user,profile,onSignIn,onSettings}:{user:any,profile:any,onSignIn:()=>void,onSettings:()=>void}){return <section><div className="profile-cover"></div><div className="profile-card"><div className="avatar profile-avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:(profile?.display_name?.[0]||user?.email?.[0]?.toUpperCase()||"Y")}</div><div className="profile-actions"><button className="outline" onClick={user?onSettings:onSignIn}>{user?"Edit profile":"Sign in"}</button></div><h1>{profile?.display_name||"Your profile"}</h1><p className="handle">@{profile?.username||"yourname"}</p><p className="bio">{user?(profile?.bio||"Make your world your way."):"Sign in to build your Living Profile."}</p><div className="stats"><div><b>0</b><span>Connections</span></div><div><b>0</b><span>Connected</span></div><div><b>0</b><span>Posts</span></div></div></div><div className="tabs"><button className="active">Posts</button><button>Vault</button><button>Replay</button></div><div className="empty compact"><UserRound size={28}/><p>Your posts will appear here.</p></div></section>}
-
-function Composer({onClose,onPublish,user}:{onClose:()=>void,onPublish:(kind:"Echo"|"Signal",text:string)=>Promise<boolean>,user:any}){const [text,setText]=useState("");const [kind,setKind]=useState<"Echo"|"Signal">("Echo");const [saving,setSaving]=useState(false);return <div className="modal-backdrop"><div className="modal composer"><div className="modal-head"><div><p className="eyebrow">CREATE</p><h2>What do you want to create?</h2></div><button className="icon" onClick={onClose}><X/></button></div><div className="create-options"><button className={kind==="Echo"?"selected":""} onClick={()=>setKind("Echo")}><Sparkles/><b>Echo</b><span>Share a thought</span></button><button className={kind==="Signal"?"selected":""} onClick={()=>setKind("Signal")}><Radio/><b>Signal</b><span>Post with a purpose</span></button><button disabled><ImagePlus/><b>Glimpse</b><span>Coming with media storage</span></button><button disabled><Video/><b>Flux</b><span>Coming with media storage</span></button></div><textarea value={text} onChange={e=>setText(e.target.value)} placeholder={user?"Write something worth sharing…":"Sign in to publish to WAYSS…"} /><div className="composer-foot"><span>Audience: Public</span><button className="primary" disabled={!text.trim()||saving} onClick={async()=>{setSaving(true);await onPublish(kind,text);setSaving(false)}}>{saving?"Publishing…":"Publish"}</button></div></div></div>}
-
-function SettingsPanel({onClose,dark,setDark,user}:{onClose:()=>void,dark:boolean,setDark:(v:boolean)=>void,user:any}){return <div className="modal-backdrop"><div className="modal settings"><div className="modal-head"><div><p className="eyebrow">ACCOUNT</p><h2>Settings</h2></div><button className="icon" onClick={onClose}><X/></button></div>{[["Edit Profile",UserRound],["Privacy & Layers",Shield],["Blocked Users",Lock],["Your Activity",Radio],["Notifications",Bell]].map(([n,I]:any)=><button className="setting-row" key={n}><I size={18}/><span>{n}</span><ChevronRight size={16}/></button>)}<div className="setting-row"><div className="setting-label"><Sun size={18}/><span>Appearance</span></div><button className="toggle" onClick={()=>setDark(!dark)}><span>{dark?"Dark":"Light"}</span><div className={dark?"switch on":"switch"}></div></button></div><div className="security-note"><Shield size={17}/><span>Supabase Row Level Security protects the connected data. Core posts, likes and saves now use the database.</span></div></div></div>}
-
-function Auth({onClose,email,setEmail,password,setPassword,onSignIn,onGoogle,onSignUp,status}:{onClose:()=>void,email:string,setEmail:any,password:string,setPassword:any,onSignIn:()=>void,onGoogle:()=>void,onSignUp:()=>void,status:string}){return <div className="modal-backdrop"><div className="modal auth"><div className="modal-head"><div><p className="eyebrow">WELCOME TO WAYSS</p><h2>Sign in</h2></div><button className="icon" onClick={onClose}><X/></button></div><button className="google-button wide" onClick={onGoogle}><span className="google-mark">G</span><span>Continue with Google</span></button><div className="auth-divider"><span>or</span></div><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email"/><input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="Password"/><button className="primary wide" onClick={onSignIn}>Sign in</button><button className="outline wide" onClick={onSignUp}>Create account</button>{status&&<p className="status">{status}</p>}<p className="tiny">Authentication uses your connected Supabase project. No privileged keys are stored in the browser.</p></div></div>}
+function Feed({posts,loading,error,onRetry,onLike,onSave,onComment,onSignIn}:{posts:Post[];loading:boolean;error:string;onRetry:()=>void;onLike:(p:Post)=>void;onSave:(p:Post)=>void;onComment:(p:Post)=>void;onSignIn:()=>void}){return <section><div className="page-head"><div><p className="eyebrow">YOUR WORLD</p><h1>Feed</h1></div><div className="filters"><button className="chip active">For You</button><button className="chip">Connected</button></div></div><div className="glimpse-row"><div className="glimpse add"><Plus size={20}/><span>Glimpse</span></div></div>{error&&<div className="empty compact"><p>{error}</p><button className="outline" onClick={onRetry}>Retry</button></div>}{loading?<div className="empty"><Sparkles size={30}/><h2>Loading your feed…</h2><p>Getting the latest posts from WAYSS.</p></div>:!error&&posts.length===0?<div className="empty"><Home size={32}/><h2>Your feed, without the clutter.</h2><p>Connect with people and create your first post.</p><button className="primary" onClick={onSignIn}>Sign in to start</button></div>:<div className="feed">{posts.map(p=><article className="post" key={p.id}><div className="post-head"><div className="avatar">{p.avatar.startsWith("http")?<img src={p.avatar} alt=""/>:p.avatar}</div><div className="who"><b>{p.author}</b><span>@{p.handle} · {p.time}</span></div><button className="icon"><MoreHorizontal size={18}/></button></div><div className="kind">{p.kind}</div><p className="post-text">{p.text}</p>{p.image&&<img className="post-image" src={p.image} alt=""/>}<div className="post-actions"><button onClick={()=>onLike(p)} className={p.liked?"liked":""}><Heart size={18} fill={p.liked?"currentColor":"none"}/><span>{p.likes}</span></button><button onClick={()=>onComment(p)}><MessageCircle size={18}/><span>{p.comments}</span></button><button onClick={()=>onSave(p)} className={p.saved?"saved":""}><Bookmark size={18} fill={p.saved?"currentColor":"none"}/></button></div></article>)}</div>}</section>}
+function Orbit({query,user,connections,onConnect}:{query:string;user:any;connections:any[];onConnect:(p:ProfileRow)=>void}){const [people,setPeople]=useState<ProfileRow[]>([]);const [loading,setLoading]=useState(false);useEffect(()=>{if(!supabase)return;setLoading(true);let q=supabase.from("profiles").select("id,username,display_name,bio,avatar_url,is_private,active_status").limit(20);if(query.trim())q=q.or(`username.ilike.%${query.trim()}%,display_name.ilike.%${query.trim()}%`);q.then(({data})=>{setPeople((data||[]) as ProfileRow[]);setLoading(false);});},[query]);const label=(p:ProfileRow)=>{const c=connections.find(x=>(x.follower_id===user?.id&&x.following_id===p.id)||(x.follower_id===p.id&&x.following_id===user?.id));if(!c)return"Connect";if(c.follower_id===user?.id&&c.status==="pending")return"Requested";if(c.status==="accepted")return"Connected";return"Connect back";};return <section><div className="page-head"><div><p className="eyebrow">DISCOVER</p><h1>Orbit</h1></div></div><div className="orbit-grid">{["People","Topics","Creators","Circles"].map((x,i)=><div className="discover-card" key={x}><div className="discover-icon">{i===0?<Users/>:i===1?<Sparkles/>:i===2?<Radio/>:<Compass/>}</div><h3>{x}</h3><p>{query?`Results related to “${query}”`:"Explore what interests you."}</p><button>Explore <ChevronRight size={15}/></button></div>)}</div><div className="section-title"><h2>People</h2><span>{loading?"Searching…":"Real WAYSS profiles"}</span></div><div className="people">{people.filter(p=>p.id!==user?.id).map(p=><div className="person" key={p.id}><div className="avatar">{p.avatar_url?<img src={p.avatar_url} alt=""/>:initial(p)}</div><div><b>{p.display_name||p.username||"WAYSS user"}</b><span>@{p.username||"username"}{p.is_private?" · Private":""}</span></div><button className="outline" disabled={label(p)==="Connected"||label(p)==="Requested"} onClick={()=>onConnect(p)}>{label(p)}</button></div>)}</div></section>}
+function Profile({user,profile,connections,onSignIn,onSave,onAccept}:{user:any;profile:ProfileRow|null;connections:any[];onSignIn:()=>void;onSave:(p:Partial<ProfileRow>)=>void;onAccept:(c:any)=>void}){const [editing,setEditing]=useState(false);const [name,setName]=useState(profile?.display_name||"");const [username,setUsername]=useState(profile?.username||"");const [bio,setBio]=useState(profile?.bio||"");const incoming=connections.filter(c=>c.following_id===user?.id&&c.status==="pending");const connected=connections.filter(c=>c.follower_id===user?.id&&c.status==="accepted").length;const connectionsCount=connections.filter(c=>c.following_id===user?.id&&c.status==="accepted").length;if(!user)return <section><div className="empty"><UserRound size={32}/><h2>Your profile</h2><p>Sign in to manage your WAYSS profile.</p><button className="primary" onClick={onSignIn}>Sign in</button></div></section>;return <section><div className="profile-card"><div className="profile-avatar avatar">{profile?.avatar_url?<img src={profile.avatar_url} alt=""/>:initial(profile)}</div><div className="profile-main"><h1>{profile?.display_name||user.email?.split("@")[0]}</h1><span>@{profile?.username||"set-username"}</span><p>{profile?.bio||"Add a bio to tell your people about you."}</p><div className="profile-stats"><b>{connectionsCount}<span>Connections</span></b><b>{connected}<span>Connected</span></b></div><button className="outline" onClick={()=>{setName(profile?.display_name||"");setUsername(profile?.username||"");setBio(profile?.bio||"");setEditing(true)}}>Edit Profile</button></div></div>{editing&&<div className="modal-card inline-editor"><div className="modal-head"><h2>Edit Profile</h2><button className="icon" onClick={()=>setEditing(false)}><X/></button></div><label>Display name<input value={name} onChange={e=>setName(e.target.value)}/></label><label>Username<input value={username} onChange={e=>setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g,""))}/></label><label>Bio<textarea value={bio} onChange={e=>setBio(e.target.value)} maxLength={160}/></label><button className="primary" onClick={()=>{onSave({display_name:name.trim(),username:username.trim()||null,bio});setEditing(false)}}>Save changes</button></div>}{incoming.length>0&&<><div className="section-title"><h2>Connection requests</h2><span>{incoming.length}</span></div><div className="people">{incoming.map(c=><div className="person" key={c.follower_id}><div className="avatar">W</div><div><b>New connection request</b><span>Request from @{c.follower_id.slice(0,8)}</span></div><button className="outline" onClick={()=>onAccept(c)}><Check size={15}/> Accept</button></div>)}</div></>}<div className="section-title"><h2>Your profile</h2><span>Real account data</span></div><div className="discover-card"><Shield size={22}/><h3>Account & privacy</h3><p>Private/public profile controls stay enforced by Supabase RLS.</p><button className="outline" onClick={()=>onSave({is_private:!profile?.is_private})}>{profile?.is_private?"Make public":"Make private"}</button></div></section>}
+function CommentsModal({post,user,onClose,onChanged}:{post:Post;user:any;onClose:()=>void;onChanged:()=>void}){const [comments,setComments]=useState<Comment[]>([]);const [body,setBody]=useState("");const [loading,setLoading]=useState(true);const [error,setError]=useState("");async function load(){if(!supabase)return;setLoading(true);const {data,error}=await supabase.from("comments").select("id,post_id,author_id,body,created_at,profile:profiles!comments_author_id_fkey(username,display_name,avatar_url)").eq("post_id",post.id).order("created_at",{ascending:true});if(error)setError(error.message);else setComments((data||[]) as any);setLoading(false);}useEffect(()=>{load();},[post.id]);async function send(){if(!supabase||!user){setError("Sign in to comment.");return;}if(!body.trim())return;const r=await supabase.from("comments").insert({post_id:post.id,author_id:user.id,body:body.trim()});if(r.error)setError(r.error.message);else{setBody("");await load();onChanged();}}async function remove(id:string){if(!supabase||!user)return;const r=await supabase.from("comments").delete().eq("id",id).eq("author_id",user.id);if(r.error)setError(r.error.message);else{await load();onChanged();}}return <div className="modal-backdrop"><div className="modal-card comments"><div className="modal-head"><div><p className="eyebrow">COMMENTS</p><h2>Conversation</h2></div><button className="icon" onClick={onClose}><X/></button></div>{error&&<p className="error">{error}</p>}<div className="comment-list">{loading?<p>Loading…</p>:comments.length===0?<p>No comments yet. Start the conversation.</p>:comments.map(c=><div className="comment" key={c.id}><div className="avatar">{c.profile?.avatar_url?<img src={c.profile.avatar_url} alt=""/>:c.profile?.display_name?.[0]?.toUpperCase()||"W"}</div><div><b>{c.profile?.display_name||c.profile?.username||"WAYSS user"}</b><span>{c.body}</span><small>{timeAgo(c.created_at)}</small></div>{c.author_id===user?.id&&<button className="icon" onClick={()=>remove(c.id)} title="Delete comment"><Trash2 size={16}/></button>}</div>)}</div><div className="comment-compose"><input value={body} onChange={e=>setBody(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send()}} placeholder={user?"Write a comment…":"Sign in to comment"}/><button className="primary" onClick={send}><Send size={17}/></button></div></div></div>}
+function NotificationsPanel({notifications,onClose}:{notifications:Notification[];onClose:()=>void}){const text=(n:Notification)=>n.type==="post_like"?"liked your post":n.type==="post_comment"?"commented on your post":n.type==="connection_request"?"sent you a connection request":"created activity for you";return <div className="modal-backdrop"><div className="modal-card notifications"><div className="modal-head"><div><p className="eyebrow">ACTIVITY</p><h2>Notifications</h2></div><button className="icon" onClick={onClose}><X/></button></div>{notifications.length===0?<div className="empty"><Bell size={28}/><p>No notifications yet.</p></div>:<div className="notification-list">{notifications.map(n=><div className={n.read_at?"notification":"notification unread"} key={n.id}><div className="avatar">{n.actor?.avatar_url?<img src={n.actor.avatar_url} alt=""/>:n.actor?.display_name?.[0]?.toUpperCase()||"W"}</div><div><b>{n.actor?.display_name||n.actor?.username||"WAYSS user"}</b><span>{text(n)}</span><small>{timeAgo(n.created_at)}</small></div></div>)}</div>}</div></div>}
+function Composer({onClose,onPublish,user}:{onClose:()=>void;onPublish:(k:"Echo"|"Signal",b:string)=>void;user:any}){const [kind,setKind]=useState<"Echo"|"Signal">("Echo");const [body,setBody]=useState("");return <div className="modal-backdrop"><div className="modal-card"><div className="modal-head"><div><p className="eyebrow">CREATE</p><h2>Share something real.</h2></div><button className="icon" onClick={onClose}><X/></button></div>{!user?<div className="empty"><p>Sign in before creating a post.</p></div>:<><div className="filters"><button className={kind==="Echo"?"chip active":"chip"} onClick={()=>setKind("Echo")}>Echo</button><button className={kind==="Signal"?"chip active":"chip"} onClick={()=>setKind("Signal")}>Signal</button></div><textarea value={body} onChange={e=>setBody(e.target.value)} maxLength={2000} placeholder="What's on your mind?"/><div className="composer-foot"><span>{body.length}/2000</span><button className="primary" disabled={!body.trim()} onClick={()=>onPublish(kind,body)}>Publish</button></div></>}</div></div>}
+function Auth({onClose,email,setEmail,password,setPassword,onSignIn,onGoogle,onSignUp,status}:{onClose:()=>void;email:string;setEmail:(v:string)=>void;password:string;setPassword:(v:string)=>void;onSignIn:()=>void;onGoogle:()=>void;onSignUp:()=>void;status:string}){return <div className="modal-backdrop"><div className="modal-card"><div className="modal-head"><div><p className="eyebrow">WELCOME TO WAYSS</p><h2>Your world. Your people. Your way.</h2></div><button className="icon" onClick={onClose}><X/></button></div><button className="google-button" onClick={onGoogle}>Continue with Google</button><div className="divider">or</div><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password"/><div className="auth-actions"><button className="primary" onClick={onSignIn}>Sign in</button><button className="outline" onClick={onSignUp}>Create account</button></div>{status&&<p className="status">{status}</p>}</div></div>}
+function SettingsPanel({dark,setDark,onClose,user}:{dark:boolean;setDark:(v:boolean)=>void;onClose:()=>void;user:any}){return <div className="modal-backdrop"><div className="modal-card"><div className="modal-head"><div><p className="eyebrow">SETTINGS</p><h2>WAYSS controls</h2></div><button className="icon" onClick={onClose}><X/></button></div><button className="setting-row" onClick={()=>setDark(!dark)}>{dark?<Moon/>:<Sun/>}<span>Appearance</span><b>{dark?"Dark":"Light"}</b></button><div className="setting-row"><Lock/><span>Account security</span><b>{user?"Signed in":"Guest"}</b></div></div></div>}
+function Flux(){return <section><div className="page-head"><div><p className="eyebrow">SHORT FORM</p><h1>Flux</h1></div></div><div className="empty"><Video size={34}/><h2>Flux is next.</h2><p>Video storage and playback will be connected after Phase 3.</p></div></section>}
