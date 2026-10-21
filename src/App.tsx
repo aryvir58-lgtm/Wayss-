@@ -44,6 +44,15 @@ export default function App(){
    const {error}=await supabase.auth.signInWithPassword({email,password});
    setStatus(error?.message ?? "Signed in."); if(!error)setAuthOpen(false);
  }
+ async function signInWithGoogle(){
+   if(!supabase){setStatus("Connect Supabase first using the .env setup in README.");return;}
+   setStatus("Opening Google…");
+   const {error}=await supabase.auth.signInWithOAuth({
+     provider:"google",
+     options:{redirectTo:window.location.origin}
+   });
+   if(error)setStatus(error.message);
+ }
  async function signUp(){
    if(!supabase){setStatus("Connect Supabase first using the .env setup in README.");return;}
    const {error}=await supabase.auth.signUp({email,password});
@@ -77,13 +86,12 @@ export default function App(){
        {screen==="You" && <Profile user={user} onSignIn={()=>setAuthOpen(true)} onSettings={()=>setSettings(true)}/>}
        {screen==="Create" && <Feed posts={filtered} liked={liked} setLiked={setLiked} saved={saved} setSaved={setSaved}/>}
      </div>
-   </main>
 
    <div className="mobile-nav">{nav.map(([n,I])=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}</div>
 
    {composer && <Composer onClose={()=>setComposer(false)} onPublish={(p)=>{setPosts(x=>[p,...x]);setComposer(false);setScreen("Feed")}}/>}
    {settings && <SettingsPanel dark={dark} setDark={setDark} onClose={()=>setSettings(false)} user={user}/>}
-   {authOpen && <Auth onClose={()=>setAuthOpen(false)} email={email} setEmail={setEmail} password={password} setPassword={setPassword} onSignIn={signIn} onSignUp={signUp} status={status}/>}
+   {authOpen && <Auth onClose={()=>setAuthOpen(false)} email={email} setEmail={setEmail} password={password} setPassword={setPassword} onSignIn={signIn} onGoogle={signInWithGoogle} onSignUp={signUp} status={status}/>}
  </div>
 }
 
@@ -110,4 +118,4 @@ function Composer({onClose,onPublish}:{onClose:()=>void,onPublish:(p:Post)=>void
 
 function SettingsPanel({onClose,dark,setDark,user}:{onClose:()=>void,dark:boolean,setDark:(v:boolean)=>void,user:any}){return <div className="modal-backdrop"><div className="modal settings"><div className="modal-head"><div><p className="eyebrow">ACCOUNT</p><h2>Settings</h2></div><button className="icon" onClick={onClose}><X/></button></div>{[["Edit Profile",UserRound],["Privacy & Layers",Shield],["Blocked Users",Lock],["Your Activity",Radio],["Notifications",Bell]].map(([n,I]:any)=><button className="setting-row" key={n}><I size={18}/><span>{n}</span><ChevronRight size={16}/></button>)}<div className="setting-row"><div className="setting-label"><Sun size={18}/><span>Appearance</span></div><button className="toggle" onClick={()=>setDark(!dark)}><span>{dark?"Dark":"Light"}</span><div className={dark?"switch on":"switch"}></div></button></div><div className="security-note"><Shield size={17}/><span>Backend security is enforced through Supabase Row Level Security. Configure the included SQL before production use.</span></div></div></div>}
 
-function Auth({onClose,email,setEmail,password,setPassword,onSignIn,onSignUp,status}:{onClose:()=>void,email:string,setEmail:any,password:string,setPassword:any,onSignIn:()=>void,onSignUp:()=>void,status:string}){return <div className="modal-backdrop"><div className="modal auth"><div className="modal-head"><div><p className="eyebrow">WELCOME TO WAYSS</p><h2>Sign in</h2></div><button className="icon" onClick={onClose}><X/></button></div><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email"/><input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="Password"/><button className="primary wide" onClick={onSignIn}>Sign in</button><button className="outline wide" onClick={onSignUp}>Create account</button>{status&&<p className="status">{status}</p>}<p className="tiny">Authentication uses your connected Supabase project. No privileged keys are stored in the browser.</p></div></div>}
+function Auth({onClose,email,setEmail,password,setPassword,onSignIn,onGoogle,onSignUp,status}:{onClose:()=>void,email:string,setEmail:any,password:string,setPassword:any,onSignIn:()=>void,onGoogle:()=>void,onSignUp:()=>void,status:string}){return <div className="modal-backdrop"><div className="modal auth"><div className="modal-head"><div><p className="eyebrow">WELCOME TO WAYSS</p><h2>Sign in</h2></div><button className="icon" onClick={onClose}><X/></button></div><button className="google-button wide" onClick={onGoogle}><span className="google-mark">G</span><span>Continue with Google</span></button><div className="auth-divider"><span>or</span></div><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email"/><input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="Password"/><button className="primary wide" onClick={onSignIn}>Sign in</button><button className="outline wide" onClick={onSignUp}>Create account</button>{status&&<p className="status">{status}</p>}<p className="tiny">Authentication uses your connected Supabase project. No privileged keys are stored in the browser.</p></div></div>}
