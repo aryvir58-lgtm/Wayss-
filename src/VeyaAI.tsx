@@ -4,14 +4,8 @@ import { supabase } from "./supabase";
 
 type Msg = { id?: string; role: "user" | "assistant"; content: string; imageUrl?: string };
 const welcome = "Hey, I'm Veya. ✦ I'm your WAYSS companion. What are you thinking about?";
-const fallback = (text: string) => {
-  const t = text.toLowerCase();
-  if (/^(hi|hello|hey|yo)\b/.test(t)) return "Hey ✦ What’s on your mind?";
-  if (/sad|upset|hurt|lonely|alone|cry/.test(t)) return "I'm here with you. You don't have to make the feeling sound perfect—tell me what happened, in your own words.";
-  if (/happy|excited|good|great/.test(t)) return "I like that energy. Tell me what happened—I want to hear the whole story.";
-  if (/thank/.test(t)) return "Always. Keep talking if you want—I’m listening.";
-  return "I couldn't reach my AI brain just now. Please try again in a moment.";
-};
+const cannedReply = /i’m listening\. say it exactly how you’d say it to a real person|i'm listening\. say it exactly how you'd say it to a real person/i;
+const fallback = (_text: string) => "I couldn't get a response from the AI service. Please try again in a moment.";
 export default function VeyaAI() {
   const [open, setOpen] = useState(false);
   const [full, setFull] = useState(false);
@@ -47,7 +41,7 @@ export default function VeyaAI() {
       const name = String(pref.data?.nickname || "Veya").slice(0, 32);
       setNickname(name);
       setNameDraft(name);
-      const rows = history.data || [];
+      const rows = (history.data || []).filter((m: any) => !(m.role === "assistant" && cannedReply.test(String(m.content || ""))));
       setMessages(rows.length ? rows.map((m: any) => ({ id: m.id, role: m.role, content: m.content || "", imageUrl: m.image_url || undefined })) : [{ role: "assistant", content: welcome }]);
       setHistoryLoaded(true);
     };
@@ -102,7 +96,7 @@ export default function VeyaAI() {
       const r = await fetch(`${base}/functions/v1/veya-chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": anonKey, Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ messages: next.slice(-20).map(m => ({ role: m.role, content: m.content })) })
+        body: JSON.stringify({ messages: next.filter(m => !(m.role === "assistant" && cannedReply.test(m.content))).slice(-20).map(m => ({ role: m.role, content: m.content })) })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || j.error) {
