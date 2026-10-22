@@ -27,7 +27,7 @@ export default function VeyaAI() {
 
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, open]);
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) { setHistoryLoaded(true); return; }
     let alive = true;
     const loadUser = async (id: string | null) => {
       if (!alive) return;
@@ -96,9 +96,12 @@ export default function VeyaAI() {
     try {
       const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } } as any;
       const base = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!base || !anonKey) throw new Error("Supabase configuration is missing. Please refresh the app or check deployment settings.");
+      if (!session?.access_token) throw new Error("Please log in to WAYSS first, then reopen your AI assistant.");
       const r = await fetch(`${base}/functions/v1/veya-chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+        headers: { "Content-Type": "application/json", "apikey": anonKey, Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ messages: next.slice(-20).map(m => ({ role: m.role, content: m.content })) })
       });
       const j = await r.json().catch(() => ({}));
@@ -115,8 +118,9 @@ export default function VeyaAI() {
       const answer: Msg = { role: "assistant", content: j.reply || "Done ✦", imageUrl };
       setMessages(v => [...v, answer]);
       void saveMessage(answer);
-    } catch {
-      const message: Msg = { role: "assistant", content: fallback(text) };
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Network error";
+      const message: Msg = { role: "assistant", content: detail };
       setMessages(v => [...v, message]);
       void saveMessage(message);
     } finally { setSending(false); }
