@@ -3,7 +3,7 @@ import { Bot, Send, X, Sparkles, Maximize2, Minimize2, Pencil, ImagePlus } from 
 import { supabase } from "./supabase";
 
 type Msg = { id?: string; role: "user" | "assistant"; content: string; imageUrl?: string };
-const welcome = "Hey, I'm Veya. ✦ I'm your WAYSS companion. What are you thinking about?";
+const welcome = "Hey, I'm WAYSS AI. ✦ Your personal AI assistant. What are we working on?";
 const cannedReply = /i’m listening\. say it exactly how you’d say it to a real person|i'm listening\. say it exactly how you'd say it to a real person/i;
 const fallback = (_text: string) => "I couldn't get a response from the AI service. Please try again in a moment.";
 export default function VeyaAI() {
@@ -11,11 +11,11 @@ export default function VeyaAI() {
   const [full, setFull] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [nickname, setNickname] = useState("Veya");
+  const [nickname, setNickname] = useState("WAYSS AI");
   const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: welcome }]);
   const [userId, setUserId] = useState<string | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
-  const [nameDraft, setNameDraft] = useState("Veya");
+  const [nameDraft, setNameDraft] = useState("WAYSS AI");
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const end = useRef<HTMLDivElement>(null);
 
@@ -38,7 +38,7 @@ export default function VeyaAI() {
         supabase.from("veya_messages").select("id,role,content,image_url,created_at").eq("user_id", id).order("created_at", { ascending: true }).limit(80)
       ]);
       if (!alive) return;
-      const name = String(pref.data?.nickname || "Veya").slice(0, 32);
+      const name = String((pref.data?.nickname && pref.data.nickname !== "Veya" ? pref.data.nickname : "WAYSS AI")).slice(0, 32);
       setNickname(name);
       setNameDraft(name);
       const rows = (history.data || []).filter((m: any) => !(m.role === "assistant" && cannedReply.test(String(m.content || ""))));
@@ -130,7 +130,7 @@ export default function VeyaAI() {
           <button className="veya-close" onClick={() => setOpen(false)} aria-label="Close assistant"><X size={18}/></button>
         </div>
       </header>
-      {renameOpen && <form className="veya-rename" onSubmit={e => { e.preventDefault(); void rename(); }}><label>Give your AI a nickname</label><div><input autoFocus maxLength={32} value={nameDraft} onChange={e => setNameDraft(e.target.value)} placeholder="e.g. Nova, Veya, Echo"/><button type="submit" disabled={!nameDraft.trim()}>Save</button><button type="button" onClick={() => setRenameOpen(false)}>Cancel</button></div><small>{userId ? "Saved to your account" : "Log in to sync your nickname and chat history"}</small></form>}
+      {renameOpen && <form className="veya-rename" onSubmit={e => { e.preventDefault(); void rename(); }}><label>Give your AI a nickname</label><div><input autoFocus maxLength={32} value={nameDraft} onChange={e => setNameDraft(e.target.value)} placeholder="e.g. Nova, Echo, Orbit"/><button type="submit" disabled={!nameDraft.trim()}>Save</button><button type="button" onClick={() => setRenameOpen(false)}>Cancel</button></div><small>{userId ? "Saved to your account" : "Log in to sync your nickname and chat history"}</small></form>}
       <div className="veya-messages">
         {!historyLoaded && <div className="veya-msg assistant typing">Loading your memories…</div>}
         {messages.map((m, i) => <div key={m.id || i} className={`veya-msg ${m.role}`}>{m.content && <div>{m.content}</div>}{m.imageUrl && <a className="veya-image-link" href={m.imageUrl} target="_blank" rel="noreferrer"><img className="veya-generated-image" src={m.imageUrl} alt="AI-generated image"/></a>}</div>)}
