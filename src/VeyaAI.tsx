@@ -58,7 +58,7 @@ export default function VeyaAI() {
 
   async function saveMessage(m: Msg, uid = userId) {
     if (!supabase || !uid) return;
-    const row: any = { user_id: uid, role: m.role, content: m.content || "", image_url: m.imageUrl || null };
+    const row: any = { user_id: uid, role: m.role, content: m.content || "", image_url: m.imageUrl && !m.imageUrl.startsWith("data:") ? m.imageUrl : null };
     const { data, error } = await supabase.from("veya_messages").insert(row).select("id").single();
     if (!error && data?.id) return data.id as string;
   }
