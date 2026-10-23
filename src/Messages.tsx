@@ -44,13 +44,24 @@ export default function Messages({user,people,onNeedSignIn}:any){
  },[selected?.id,loadMessages]);
  useEffect(()=>{const ch=supabase?.channel("wayss-inbox-"+userId).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},()=>{void loadThreads();if(selected)void loadMessages(selected.id)}).subscribe();return()=>{if(ch&&supabase)void supabase.removeChannel(ch)}},[userId,selected?.id,loadThreads,loadMessages]);
  const startThread=async(peer:Person)=>{
-  if(!supabase||!userId)return;setErr("");setBusy(true);
-  const existing=threads.find(t=>t.peer.id===peer.id);if(existing){setSelected(existing);setBusy(false);return}
-  const {data:c,error:ce}=await supabase.from("conversations").insert({created_by:userId,is_group:false,title:null}).select("id").single();
-  if(ce||!c){setErr(ce?.message||"Couldn't start chat.");setBusy(false);return}
-  const {error:me}=await supabase.from("conversation_members").insert([{conversation_id:c.id,user_id:userId},{conversation_id:c.id,user_id:peer.id}]);
-  if(me){setErr(me.message);setBusy(false);return}
-  const t:Thread={id:c.id,peer,last:null,muted:false};setThreads(prev=>[t,...prev]);setSelected(t);setBusy(false);
+  if(!supabase||!userId)return;
+  setErr("");setBusy(true);
+  try{
+   const existing=threads.find(t=>t.peer.id===peer.id);
+   if(existing){setSelected(existing);setBusy(false);return}
+   // Avoid SELECT before membership exists: conversation reads are member-only under RLS.
+   const conversationId=crypto.randomUUID();
+   const {error:ce}=await supabase.from("conversations").insert({id:conversationId,created_by:userId,is_group:false,title:null});
+   if(ce)throw ce;
+   const {error:me}=await supabase.from("conversation_members").insert([
+    {conversation_id:conversationId,user_id:userId},
+    {conversation_id:conversationId,user_id:peer.id}
+   ]);
+   if(me)throw me;
+   const t:Thread={id:conversationId,peer,last:null,muted:false};
+   setThreads(prev=>[t,...prev]);setSelected(t);
+  }catch(e:any){setErr(e?.message||"Couldn't start chat. Please try again.");}
+  finally{setBusy(false);}
  };
  const send=async(file?:File)=>{
   if(!supabase||!userId||!selected)return;if(!body.trim()&&!file)return;setBusy(true);setErr("");
