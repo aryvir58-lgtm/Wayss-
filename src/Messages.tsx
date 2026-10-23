@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useRef,useState} from "react";
-import {BellOff,ImagePlus,MessageCircle,Phone,PhoneOff,Video,Mic,MicOff,VideoOff,Send,Search,ArrowLeft,MoreHorizontal,Trash2,Smile,CheckCheck,Volume2,X,UserRound, Pencil, Copy} from "lucide-react";
+import {BellOff,ImagePlus,MessageCircle,Phone,PhoneOff,Video,Mic,MicOff,VideoOff,Send,Search,ArrowLeft,MoreHorizontal,Trash2,Smile,CheckCheck,Volume2,X,UserRound, Pencil, Copy, ShieldBan, ShieldCheck} from "lucide-react";
 import {supabase} from "./supabase";
 
 type Person={id:string;username:string|null;display_name:string|null;avatar_url:string|null;active_status?:boolean};
@@ -10,7 +10,7 @@ const RTC_CONFIG:RTCConfiguration={iceServers:[{urls:"stun:stun.l.google.com:193
 const initials=(p:any)=>String(p?.display_name||p?.username||"W").trim().slice(0,1).toUpperCase();
 const time=(s:string)=>new Date(s).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 export default function Messages({user,people,onNeedSignIn,active=true}:any){
- const [threads,setThreads]=useState<Thread[]>([]),[selected,setSelected]=useState<Thread|null>(null),[rows,setRows]=useState<Msg[]>([]),[query,setQuery]=useState(""),[body,setBody]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[err,setErr]=useState(""),[muted,setMuted]=useState(false),[menu,setMenu]=useState(false),[call,setCall]=useState<Call|null>(null),[incoming,setIncoming]=useState<Call|null>(null),[micMuted,setMicMuted]=useState(false),[cameraOff,setCameraOff]=useState(false),[callStatus,setCallStatus]=useState(""),[emojiOpen,setEmojiOpen]=useState(false),[actionMessage,setActionMessage]=useState<string|null>(null),[editingMessage,setEditingMessage]=useState<Msg|null>(null),[editDraft,setEditDraft]=useState("");
+ const [threads,setThreads]=useState<Thread[]>([]),[selected,setSelected]=useState<Thread|null>(null),[rows,setRows]=useState<Msg[]>([]),[query,setQuery]=useState(""),[body,setBody]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[err,setErr]=useState(""),[muted,setMuted]=useState(false),[menu,setMenu]=useState(false),[call,setCall]=useState<Call|null>(null),[incoming,setIncoming]=useState<Call|null>(null),[micMuted,setMicMuted]=useState(false),[cameraOff,setCameraOff]=useState(false),[callStatus,setCallStatus]=useState(""),[emojiOpen,setEmojiOpen]=useState(false),[actionMessage,setActionMessage]=useState<string|null>(null),[editingMessage,setEditingMessage]=useState<Msg|null>(null),[editDraft,setEditDraft]=useState(""),[blocked,setBlocked]=useState(false),[blockBusy,setBlockBusy]=useState(false);
  const holdTimer=useRef<number|null>(null);
  const pc=useRef<RTCPeerConnection|null>(null),localStream=useRef<MediaStream|null>(null),remoteVideo=useRef<HTMLVideoElement|null>(null),localVideo=useRef<HTMLVideoElement|null>(null),processedCandidates=useRef(0),seenIncoming=useRef<string|null>(null),currentCall=useRef<Call|null>(null),remoteCandidateCount=useRef(0),pollLock=useRef(false);
  const userId=user?.id;
@@ -35,14 +35,28 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
   built.sort((a,b)=>new Date(b.last?.created_at||0).getTime()-new Date(a.last?.created_at||0).getTime());
   setThreads(built);setLoading(false);
  },[userId]);
+ const loadBlockStatus=useCallback(async(peerId:string)=>{
+  if(!supabase||!userId||!peerId){setBlocked(false);return}
+  const {data,error}=await supabase.from("blocked_users").select("blocked_id").eq("blocked_by",userId).eq("blocked_id",peerId).maybeSingle();
+  if(!error)setBlocked(!!data);
+ },[userId]);
+ const toggleBlock=async()=>{
+  if(!supabase||!userId||!selected||blockBusy)return;
+  setBlockBusy(true);setErr("");
+  try{
+   if(blocked){const {error}=await supabase.from("blocked_users").delete().eq("blocked_by",userId).eq("blocked_id",selected.peer.id);if(error)throw error;setBlocked(false);setErr("User unblocked. You can message them again.");}
+   else{const {error}=await supabase.from("blocked_users").insert({blocked_by:userId,blocked_id:selected.peer.id});if(error)throw error;setBlocked(true);setErr("User blocked. Sending messages is disabled in this chat.");}
+  }catch(e:any){setErr(e?.message||"Couldn't update block status. Apply the blocked_users database migration first.");}
+  finally{setBlockBusy(false);setMenu(false)}
+ };
  const loadMessages=useCallback(async(id:string)=>{
   if(!supabase)return;const{data,error}=await supabase.from("messages").select("*").eq("conversation_id",id).order("created_at",{ascending:true}).limit(500);
   if(error)setErr(error.message);else{const hidden=new Set<string>(JSON.parse(localStorage.getItem("wayss-hidden-messages-"+userId)||"[]"));setRows(((data||[]) as Msg[]).filter(m=>!hidden.has(m.id)));}
  },[]);
  useEffect(()=>{void loadThreads()},[loadThreads]);
- useEffect(()=>{if(!selected){setRows([]);return}void loadMessages(selected.id);setMuted(localStorage.getItem("wayss-muted-"+selected.id)==="1");
+ useEffect(()=>{if(!selected){setRows([]);setBlocked(false);return}void loadMessages(selected.id);void loadBlockStatus(selected.peer.id);setMuted(localStorage.getItem("wayss-muted-"+selected.id)==="1");
   if(!supabase)return;const channel=supabase.channel("wayss-chat-"+selected.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+selected.id},(payload:any)=>{const hidden=new Set<string>(JSON.parse(localStorage.getItem("wayss-hidden-messages-"+userId)||"[]"));if(!hidden.has(payload.new.id))setRows(prev=>prev.some(x=>x.id===payload.new.id)?prev:[...prev,payload.new as Msg])}).on("postgres_changes",{event:"UPDATE",schema:"public",table:"messages",filter:"conversation_id=eq."+selected.id},(payload:any)=>setRows(prev=>prev.map(x=>x.id===payload.new.id?payload.new as Msg:x))).on("postgres_changes",{event:"DELETE",schema:"public",table:"messages",filter:"conversation_id=eq."+selected.id},(payload:any)=>setRows(prev=>prev.filter(x=>x.id!==payload.old.id))).subscribe();return()=>{void supabase!.removeChannel(channel)}
- },[selected?.id,loadMessages]);
+ },[selected?.id,selected?.peer.id,loadMessages,loadBlockStatus]);
  useEffect(()=>{const ch=supabase?.channel("wayss-inbox-"+userId).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},()=>{void loadThreads();if(selected)void loadMessages(selected.id)}).subscribe();return()=>{if(ch&&supabase)void supabase.removeChannel(ch)}},[userId,selected?.id,loadThreads,loadMessages]);
  const startThread=async(peer:Person)=>{
   if(!supabase||!userId){setErr("Please sign in again to start a chat.");return}
@@ -78,7 +92,7 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
   finally{setBusy(false);}
  };
  const send=async(file?:File)=>{
-  if(!supabase||!userId||!selected)return;if(!body.trim()&&!file)return;setBusy(true);setErr("");
+  if(!supabase||!userId||!selected)return;if(blocked){setErr("You blocked this user. Unblock them to send messages.");return}if(!body.trim()&&!file)return;setBusy(true);setErr("");
   let media_url:string|null=null,media_type:string|null=null;
   if(file){if(file.size>15*1024*1024){setErr("Media must be under 15 MB.");setBusy(false);return}
    const path=userId+"/messages/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
@@ -145,8 +159,8 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
  const filtered=people.filter((p:Person)=>p.id!==userId&&((p.display_name||"")+" "+(p.username||"")).toLowerCase().includes(query.toLowerCase()));
  const showPeople=query.trim().length>0;
  if(!userId)return <section className="messages-page"><div className="empty"><MessageCircle size={34}/><h2>Messages, calls, your people.</h2><p>Sign in to chat with WAYSS users and start audio or video calls.</p><button className="primary" onClick={onNeedSignIn}>Sign in</button></div></section>;
- return <section className="messages-page" style={{display:active?"grid":"none",gridTemplateColumns:"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:active?"min(72vh,760px)":undefined}}>
-  <aside className="messages-list" style={{display:active?undefined:"none",border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",minWidth:0}}>
+ return <section className={"messages-page "+(selected?"messages-chat-open":"")} style={{display:active?"grid":"none",gridTemplateColumns:selected?"minmax(0,1fr)":"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:active?"min(78vh,860px)":undefined}}>
+  <aside className="messages-list" style={{display:active&&!selected?undefined:"none",border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",minWidth:0}}>
    <div style={{padding:18,borderBottom:"1px solid var(--line)"}}><p className="eyebrow">YOUR PEOPLE</p><h1 style={{margin:"2px 0 14px"}}>Messages</h1><div className="search" style={{width:"100%",boxSizing:"border-box"}}><Search size={16}/><input value={query}onChange={e=>setQuery(e.target.value)}placeholder="Search people or chats"/></div></div>
    {err&&!selected&&<div role="alert" style={{margin:"10px 12px",padding:10,borderRadius:10,border:"1px solid rgba(217,69,88,.35)",background:"rgba(217,69,88,.08)",fontSize:12,overflowWrap:"anywhere"}}>{err}</div>}
    {busy&&!selected&&<p style={{padding:"0 18px",fontSize:12,opacity:.7}}>Opening conversation…</p>}
@@ -159,8 +173,8 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
   <div className="message-window" style={{display:active?undefined:"none",border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",display:"flex",flexDirection:"column",minWidth:0,minHeight:520}}>
    {!selected?<div className="empty" style={{margin:"auto",padding:24}}><MessageCircle size={34}/><h2>Your world. Your people.</h2><p>Choose a chat or search for someone to say hello.</p></div>:<>
     <div className="message-header" style={{padding:"14px 16px",borderBottom:"1px solid var(--line)",display:"flex",alignItems:"center",gap:10}}>
-     <button className="icon" onClick={()=>setSelected(null)} aria-label="Back to chats"><ArrowLeft size={18}/></button><span className="avatar">{selected.peer.avatar_url?<img src={selected.peer.avatar_url} alt=""/>:initials(selected.peer)}</span><div style={{flex:1,minWidth:0}}><b>{selected.peer.display_name||selected.peer.username||"WAYSS user"}</b><small style={{display:"block",opacity:.65}}>@{selected.peer.username||"user"} · {selected.peer.active_status?"Active on WAYSS":"WAYSS"}</small></div>
-     <button className="icon" title="Voice call" onClick={()=>void beginCall("audio")}><Phone size={18}/></button><button className="icon" title="Video call" onClick={()=>void beginCall("video")}><Video size={19}/></button><div style={{position:"relative"}}><button className="icon" title="Chat options" onClick={()=>setMenu(!menu)}><MoreHorizontal size={20}/></button>{menu&&<div className="post-menu" style={{right:0,top:40,zIndex:5}}><button onClick={toggleMute}><BellOff size={15}/>{muted?"Unmute chat":"Mute chat notifications"}</button></div>}</div>
+     <button className="icon message-back" onClick={()=>setSelected(null)} aria-label="Back to chats"><ArrowLeft size={18}/></button><span className="avatar">{selected.peer.avatar_url?<img src={selected.peer.avatar_url} alt=""/>:initials(selected.peer)}</span><div style={{flex:1,minWidth:0}}><b>{selected.peer.display_name||selected.peer.username||"WAYSS user"}</b><small style={{display:"block",opacity:.65}}>@{selected.peer.username||"user"} · {selected.peer.active_status?"Active on WAYSS":"WAYSS"}</small></div>
+     <button className="icon" title="Voice call" onClick={()=>void beginCall("audio")}><Phone size={18}/></button><button className="icon" title="Video call" onClick={()=>void beginCall("video")}><Video size={19}/></button><div style={{position:"relative"}}><button className="icon" title="Chat options" onClick={()=>setMenu(!menu)}><MoreHorizontal size={20}/></button>{menu&&<div className="post-menu" style={{right:0,top:40,zIndex:5}}><button onClick={toggleMute}><BellOff size={15}/>{muted?"Unmute chat":"Mute chat notifications"}</button><button onClick={()=>void toggleBlock()} style={{color:blocked?"#7ee0b8":"#ff8a96"}}>{blocked?<ShieldCheck size={15}/>:<ShieldBan size={15}/>} {blockBusy?"Updating…":blocked?"Unblock user":"Block user"}</button></div>}</div>
     </div>
     {err&&<p className="status" style={{margin:10}}>{err}</p>}
     {muted&&<div style={{padding:"7px 14px",fontSize:12,opacity:.7,display:"flex",alignItems:"center",gap:6}}><BellOff size={13}/> Chat muted on this device</div>}
@@ -178,10 +192,10 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
      </div>)}
      {!rows.length&&<p style={{textAlign:"center",opacity:.6,margin:"auto"}}>This is the beginning of your conversation. Say hi 👋</p>}
     </div>
-    <div style={{padding:12,borderTop:"1px solid var(--line)",display:"flex",alignItems:"center",gap:8}}>
+    <div className="message-composer" style={{padding:12,borderTop:"1px solid var(--line)",display:"flex",alignItems:"center",gap:8}}>
      <label className="icon" title="Share image or video" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><ImagePlus size={19}/><input hidden type="file" accept="image/*,video/*" onChange={e=>{const f=e.target.files?.[0];if(f)void send(f);e.currentTarget.value=""}}/></label>
-     <input value={body}onChange={e=>setBody(e.target.value)}onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}}}placeholder="Message…" style={{flex:1,minWidth:0}}/>
-     <button className="icon" title="Emoji" onClick={()=>setEmojiOpen(!emojiOpen)}><Smile size={18}/></button><button className="primary" disabled={busy||(!body.trim())} onClick={()=>void send()}><Send size={17}/></button>
+     <input className="wayss-input message-input" disabled={blocked} value={body}onChange={e=>setBody(e.target.value)}onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}}}placeholder={blocked?"Unblock this user to message":"Message…"} style={{flex:1,minWidth:0}}/>
+     <button className="icon" title="Emoji" onClick={()=>setEmojiOpen(!emojiOpen)}><Smile size={18}/></button><button className="primary" disabled={busy||blocked||(!body.trim())} onClick={()=>void send()}><Send size={17}/></button>
     </div>{emojiOpen&&<div style={{padding:10,display:"flex",gap:8,justifyContent:"center",borderTop:"1px solid var(--line)"}}>{["❤️","😂","🔥","😍","👍","🥹","👀","✨"].map(e=><button key={e} className="icon" onClick={()=>{setBody(v=>v+e);setEmojiOpen(false)}}>{e}</button>)}</div>}
    </>}
   </div>
