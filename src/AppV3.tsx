@@ -1,4 +1,4 @@
-import React,{useEffect,useMemo,useState}from"react";
+import React,{useEffect,useMemo,useRef,useState}from"react";
 import{Bell,Bookmark,Compass,Heart,Home,LogIn,LogOut,MessageCircle,MoreHorizontal,Plus,Search,Settings,UserRound,UserPlus,UserMinus,Check,Video,X,Sparkles,Send,Trash2,ImagePlus,Copy,Edit3,Upload,Lock}from"lucide-react";
 import{supabase}from"./supabase";
 import Messages from "./Messages";
