@@ -9,7 +9,7 @@ type Call={id:string;conversation_id:string;caller_id:string;callee_id:string;me
 const RTC_CONFIG:RTCConfiguration={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]};
 const initials=(p:any)=>String(p?.display_name||p?.username||"W").trim().slice(0,1).toUpperCase();
 const time=(s:string)=>new Date(s).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-export default function Messages({user,people,onNeedSignIn}:any){
+export default function Messages({user,people,onNeedSignIn,active=true}:any){
  const [threads,setThreads]=useState<Thread[]>([]),[selected,setSelected]=useState<Thread|null>(null),[rows,setRows]=useState<Msg[]>([]),[query,setQuery]=useState(""),[body,setBody]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[err,setErr]=useState(""),[muted,setMuted]=useState(false),[menu,setMenu]=useState(false),[call,setCall]=useState<Call|null>(null),[incoming,setIncoming]=useState<Call|null>(null),[micMuted,setMicMuted]=useState(false),[cameraOff,setCameraOff]=useState(false),[callStatus,setCallStatus]=useState(""),[emojiOpen,setEmojiOpen]=useState(false);
  const pc=useRef<RTCPeerConnection|null>(null),localStream=useRef<MediaStream|null>(null),remoteVideo=useRef<HTMLVideoElement|null>(null),localVideo=useRef<HTMLVideoElement|null>(null),processedCandidates=useRef(0),seenIncoming=useRef<string|null>(null),currentCall=useRef<Call|null>(null),remoteCandidateCount=useRef(0),pollLock=useRef(false);
  const userId=user?.id;
@@ -110,14 +110,22 @@ export default function Messages({user,people,onNeedSignIn}:any){
  const beginCall=async(type:"audio"|"video")=>{
   if(!supabase||!userId||!selected)return;const{data,error}=await supabase.from("call_sessions").insert({conversation_id:selected.id,caller_id:userId,callee_id:selected.peer.id,media_type:type,status:"ringing"}).select("*").single();if(error){setErr(error.message);return}await attachCall(data as Call,true);
  };
- const acceptCall=async()=>{if(!incoming)return;const c=incoming;setIncoming(null);await attachCall(c,false)};
+ const acceptCall=async()=>{if(!incoming||!supabase)return;const c=incoming;
+  const {data:latest,error}=await supabase.from("call_sessions").select("*").eq("id",c.id).maybeSingle();
+  if(error||!latest?.offer?.sdp){setCallStatus("Call setup is still loading. Please answer again in a moment.");return}
+  setIncoming(null);await attachCall(latest as Call,false)
+ };
  useEffect(()=>{if(!userId||!supabase)return;let active=true;const tick=async()=>{
   if(!active||pollLock.current)return;pollLock.current=true;
   try{
    const{data}=await supabase!.from("call_sessions").select("*").or("caller_id.eq."+userId+",callee_id.eq."+userId).in("status",["ringing","accepted"]).order("created_at",{ascending:false}).limit(8);
    if(!active)return;const list=(data||[]) as Call[];const inCall=currentCall.current;
-   const ring=list.find(c=>c.callee_id===userId&&c.caller_id!==userId&&c.status==="ringing");
-   if(ring&&ring.id!==seenIncoming.current&&!inCall){seenIncoming.current=ring.id;setIncoming(ring)}
+   const ring=list.find(c=>c.callee_id===userId&&c.caller_id!==userId&&c.status==="ringing"&&!!c.offer?.sdp);
+   if(ring&&ring.id!==seenIncoming.current&&!inCall){seenIncoming.current=ring.id;setIncoming(ring);
+    if("Notification" in window&&Notification.permission==="granted"&&document.visibilityState!=="visible"){
+     try{const notice=new Notification(ring.media_type==="video"?"Incoming WAYSS video call":"Incoming WAYSS voice call",{body:"Open WAYSS to answer or decline.",tag:"wayss-call-"+ring.id});notice.onclick=()=>{window.focus();notice.close()}}catch(e){console.warn("WAYSS notification unavailable:",e)}
+    }
+   }
    if(inCall){const latest=list.find(c=>c.id===inCall.id);if(!latest||["ended","declined","missed"].includes(latest.status)){await stopCall(latest?.status||"ended")}else{
      currentCall.current=latest;setCall(latest);
      const peer=pc.current;
@@ -132,8 +140,8 @@ export default function Messages({user,people,onNeedSignIn}:any){
  const filtered=people.filter((p:Person)=>p.id!==userId&&((p.display_name||"")+" "+(p.username||"")).toLowerCase().includes(query.toLowerCase()));
  const showPeople=query.trim().length>0;
  if(!userId)return <section className="messages-page"><div className="empty"><MessageCircle size={34}/><h2>Messages, calls, your people.</h2><p>Sign in to chat with WAYSS users and start audio or video calls.</p><button className="primary" onClick={onNeedSignIn}>Sign in</button></div></section>;
- return <section className="messages-page" style={{display:"grid",gridTemplateColumns:"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:"min(72vh,760px)"}}>
-  <aside className="messages-list" style={{border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",minWidth:0}}>
+ return <section className="messages-page" style={{display:active?"grid":"contents",gridTemplateColumns:"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:active?"min(72vh,760px)":undefined}}>
+  <aside className="messages-list" style={{display:active?undefined:"none",border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",minWidth:0}}>
    <div style={{padding:18,borderBottom:"1px solid var(--line)"}}><p className="eyebrow">YOUR PEOPLE</p><h1 style={{margin:"2px 0 14px"}}>Messages</h1><div className="search" style={{width:"100%",boxSizing:"border-box"}}><Search size={16}/><input value={query}onChange={e=>setQuery(e.target.value)}placeholder="Search people or chats"/></div></div>
    {err&&!selected&&<div role="alert" style={{margin:"10px 12px",padding:10,borderRadius:10,border:"1px solid rgba(217,69,88,.35)",background:"rgba(217,69,88,.08)",fontSize:12,overflowWrap:"anywhere"}}>{err}</div>}
    {busy&&!selected&&<p style={{padding:"0 18px",fontSize:12,opacity:.7}}>Opening conversation…</p>}
@@ -143,7 +151,7 @@ export default function Messages({user,people,onNeedSignIn}:any){
     {!loading&&!threads.length&&!showPeople&&<div style={{padding:20,opacity:.7,fontSize:13}}>No chats yet. Search for a person above to start one.</div>}
    </div>
   </aside>
-  <div className="message-window" style={{border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",display:"flex",flexDirection:"column",minWidth:0,minHeight:520}}>
+  <div className="message-window" style={{display:active?undefined:"none",border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",display:"flex",flexDirection:"column",minWidth:0,minHeight:520}}>
    {!selected?<div className="empty" style={{margin:"auto",padding:24}}><MessageCircle size={34}/><h2>Your world. Your people.</h2><p>Choose a chat or search for someone to say hello.</p></div>:<>
     <div className="message-header" style={{padding:"14px 16px",borderBottom:"1px solid var(--line)",display:"flex",alignItems:"center",gap:10}}>
      <button className="icon" onClick={()=>setSelected(null)} aria-label="Back to chats"><ArrowLeft size={18}/></button><span className="avatar">{selected.peer.avatar_url?<img src={selected.peer.avatar_url} alt=""/>:initials(selected.peer)}</span><div style={{flex:1,minWidth:0}}><b>{selected.peer.display_name||selected.peer.username||"WAYSS user"}</b><small style={{display:"block",opacity:.65}}>@{selected.peer.username||"user"} · {selected.peer.active_status?"Active on WAYSS":"WAYSS"}</small></div>
