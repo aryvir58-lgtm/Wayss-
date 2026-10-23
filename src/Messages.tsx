@@ -145,7 +145,7 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
  const filtered=people.filter((p:Person)=>p.id!==userId&&((p.display_name||"")+" "+(p.username||"")).toLowerCase().includes(query.toLowerCase()));
  const showPeople=query.trim().length>0;
  if(!userId)return <section className="messages-page"><div className="empty"><MessageCircle size={34}/><h2>Messages, calls, your people.</h2><p>Sign in to chat with WAYSS users and start audio or video calls.</p><button className="primary" onClick={onNeedSignIn}>Sign in</button></div></section>;
- return <section className="messages-page" style={{display:active?"grid":"contents",gridTemplateColumns:"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:active?"min(72vh,760px)":undefined}}>
+ return <section className="messages-page" style={{display:active?"grid":"none",gridTemplateColumns:"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:active?"min(72vh,760px)":undefined}}>
   <aside className="messages-list" style={{display:active?undefined:"none",border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",minWidth:0}}>
    <div style={{padding:18,borderBottom:"1px solid var(--line)"}}><p className="eyebrow">YOUR PEOPLE</p><h1 style={{margin:"2px 0 14px"}}>Messages</h1><div className="search" style={{width:"100%",boxSizing:"border-box"}}><Search size={16}/><input value={query}onChange={e=>setQuery(e.target.value)}placeholder="Search people or chats"/></div></div>
    {err&&!selected&&<div role="alert" style={{margin:"10px 12px",padding:10,borderRadius:10,border:"1px solid rgba(217,69,88,.35)",background:"rgba(217,69,88,.08)",fontSize:12,overflowWrap:"anywhere"}}>{err}</div>}
