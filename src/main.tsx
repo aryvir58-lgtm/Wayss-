@@ -1,5 +1,6 @@
 import React,{useState} from "react";
 import { createRoot } from "react-dom/client";
+import { Menu } from "lucide-react";
 import App from "./AppV3";
 import Enhancements from "./Enhancements";
 import VeyaAI from "./VeyaAI";
