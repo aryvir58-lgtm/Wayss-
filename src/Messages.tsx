@@ -44,12 +44,25 @@ export default function Messages({user,people,onNeedSignIn}:any){
  },[selected?.id,loadMessages]);
  useEffect(()=>{const ch=supabase?.channel("wayss-inbox-"+userId).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},()=>{void loadThreads();if(selected)void loadMessages(selected.id)}).subscribe();return()=>{if(ch&&supabase)void supabase.removeChannel(ch)}},[userId,selected?.id,loadThreads,loadMessages]);
  const startThread=async(peer:Person)=>{
-  if(!supabase||!userId)return;
+  if(!supabase||!userId){setErr("Please sign in again to start a chat.");return}
   setErr("");setBusy(true);
   try{
    const existing=threads.find(t=>t.peer.id===peer.id);
    if(existing){setSelected(existing);setBusy(false);return}
-   // Avoid SELECT before membership exists: conversation reads are member-only under RLS.
+   // Reuse an existing 1:1 conversation even if the inbox list has not refreshed yet.
+   const {data:mine,error:mineError}=await supabase.from("conversation_members").select("conversation_id").eq("user_id",userId);
+   if(mineError)throw mineError;
+   const ids=(mine||[]).map((m:any)=>m.conversation_id);
+   if(ids.length){
+    const {data:members,error:membersError}=await supabase.from("conversation_members").select("conversation_id,user_id").in("conversation_id",ids).eq("user_id",peer.id);
+    if(membersError)throw membersError;
+    const match=(members||[])[0];
+    if(match){
+     const t:Thread={id:match.conversation_id,peer,last:null,muted:localStorage.getItem("wayss-muted-"+match.conversation_id)==="1"};
+     setThreads(prev=>[t,...prev.filter(x=>x.id!==t.id)]);setSelected(t);void loadMessages(t.id);return;
+    }
+   }
+   // Insert without .select(): RLS only allows reading a conversation after membership exists.
    const conversationId=crypto.randomUUID();
    const {error:ce}=await supabase.from("conversations").insert({id:conversationId,created_by:userId,is_group:false,title:null});
    if(ce)throw ce;
@@ -59,7 +72,7 @@ export default function Messages({user,people,onNeedSignIn}:any){
    ]);
    if(me)throw me;
    const t:Thread={id:conversationId,peer,last:null,muted:false};
-   setThreads(prev=>[t,...prev]);setSelected(t);
+   setThreads(prev=>[t,...prev]);setSelected(t);void loadMessages(t.id);
   }catch(e:any){setErr(e?.message||"Couldn't start chat. Please try again.");}
   finally{setBusy(false);}
  };
@@ -120,6 +133,8 @@ export default function Messages({user,people,onNeedSignIn}:any){
  return <section className="messages-page" style={{display:"grid",gridTemplateColumns:"minmax(250px,320px) minmax(0,1fr)",gap:16,minHeight:"min(72vh,760px)"}}>
   <aside className="messages-list" style={{border:"1px solid var(--line)",borderRadius:20,overflow:"hidden",background:"var(--panel)",minWidth:0}}>
    <div style={{padding:18,borderBottom:"1px solid var(--line)"}}><p className="eyebrow">YOUR PEOPLE</p><h1 style={{margin:"2px 0 14px"}}>Messages</h1><div className="search" style={{width:"100%",boxSizing:"border-box"}}><Search size={16}/><input value={query}onChange={e=>setQuery(e.target.value)}placeholder="Search people or chats"/></div></div>
+   {err&&!selected&&<div role="alert" style={{margin:"10px 12px",padding:10,borderRadius:10,border:"1px solid rgba(217,69,88,.35)",background:"rgba(217,69,88,.08)",fontSize:12,overflowWrap:"anywhere"}}>{err}</div>}
+   {busy&&!selected&&<p style={{padding:"0 18px",fontSize:12,opacity:.7}}>Opening conversation…</p>}
    <div style={{overflowY:"auto",maxHeight:560}}>
     {showPeople&&filtered.map((p:Person)=><button key={p.id} onClick={()=>void startThread(p)} className="person" style={{width:"100%",border:0,borderRadius:0,textAlign:"left",background:"transparent",cursor:"pointer",padding:14}}><span className="avatar">{p.avatar_url?<img src={p.avatar_url} alt=""/>:initials(p)}</span><span style={{flex:1,minWidth:0,textAlign:"left"}}><b>{p.display_name||p.username||"WAYSS user"}</b><span>@{p.username||"user"} · Start chat</span></span><MessageCircle size={17}/></button>)}
     {loading?<p style={{padding:18,opacity:.65}}>Loading chats…</p>:threads.filter(t=>!showPeople||((t.peer.display_name||"")+" "+(t.peer.username||"")).toLowerCase().includes(query.toLowerCase())).map(t=><button key={t.id} onClick={()=>{setSelected(t);setMenu(false)}} className="person" style={{width:"100%",border:0,borderRadius:0,textAlign:"left",background:selected?.id===t.id?"var(--surface,rgba(139,114,255,.12))":"transparent",cursor:"pointer",padding:14}}><span className="avatar">{t.peer.avatar_url?<img src={t.peer.avatar_url} alt=""/>:initials(t.peer)}</span><span style={{flex:1,minWidth:0,textAlign:"left"}}><b>{t.peer.display_name||t.peer.username||"WAYSS user"} {t.muted&&<BellOff size={12} style={{display:"inline"}}/>}</b><span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"block"}}>{t.last?.body|| (t.last?.media_type?"Shared "+t.last.media_type:"Start a conversation")}</span></span>{t.last&&<small>{time(t.last.created_at)}</small>}</button>)}
