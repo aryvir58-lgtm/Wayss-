@@ -8,5 +8,5 @@ import WayssSettings from "./WayssSettings";
 import "./styles.css";
 import "./premium-ui.css";
 
-function Shell(){const[settings,setSettings]=useState(false);return <><App/><Enhancements/><VeyaAI/><ProfileOverlay/><button className="ws-floating-settings" onClick={()=>setSettings(true)} aria-label="WAYSS Settings">⚙</button><WayssSettings open={settings} onClose={()=>setSettings(false)}/></>}
+function Shell(){const[settings,setSettings]=useState(false);return <><App/><Enhancements/><VeyaAI/><ProfileOverlay/><button className="ws-floating-settings ws-top-menu" onClick={()=>setSettings(true)} aria-label="Open settings" title="Settings"><Menu size={21}/></button><WayssSettings open={settings} onClose={()=>setSettings(false)}/></>}
 createRoot(document.getElementById("root")!).render(<React.StrictMode><Shell/></React.StrictMode>);
