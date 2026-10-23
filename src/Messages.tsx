@@ -91,7 +91,7 @@ export default function Messages({user,people,onNeedSignIn}:any){
  const toggleMute=()=>{if(!selected)return;const next=!muted;setMuted(next);localStorage.setItem("wayss-muted-"+selected.id,next?"1":"0");setThreads(prev=>prev.map(t=>t.id===selected.id?{...t,muted:next}:t));setMenu(false)};
  const stopCall=async(status="ended")=>{const active=currentCall.current;if(active&&supabase)await supabase.from("call_sessions").update({status,updated_at:new Date().toISOString()}).eq("id",active.id);pc.current?.close();pc.current=null;localStream.current?.getTracks().forEach(t=>t.stop());localStream.current=null;if(remoteVideo.current)remoteVideo.current.srcObject=null;if(localVideo.current)localVideo.current.srcObject=null;currentCall.current=null;setCall(null);setIncoming(null);setCallStatus("");setMicMuted(false);setCameraOff(false);processedCandidates.current=0;remoteCandidateCount.current=0};
  const addLocalCandidates=async(candidate:RTCIceCandidate,which:"caller_candidates"|"callee_candidates",id:string)=>{
-  if(!supabase)return;const{data}=await supabase.from("call_sessions").select(which).eq("id",id).maybeSingle();const old=(data as any)?.[which]||[];await supabase.from("call_sessions").update({[which]:[...old,candidate.toJSON()],updated_at:new Date().toISOString()}).eq("id",id);
+  if(!supabase)return;const{data}=await supabase.from("call_sessions").select(which).eq("id",id).maybeSingle();const old=(data as any)?.[which]||[];await supabase.from("call_sessions").update({[which]:[...old,({candidate:candidate.candidate,sdpMid:candidate.sdpMid,sdpMLineIndex:candidate.sdpMLineIndex,usernameFragment:candidate.usernameFragment})],updated_at:new Date().toISOString()}).eq("id",id);
  };
  const attachCall=async(c:Call,initiator:boolean)=>{
   if(!supabase)return;setCall(c);setCallStatus(initiator?"Calling…":"Connecting…");currentCall.current=c;processedCandidates.current=0;remoteCandidateCount.current=0;
@@ -101,8 +101,8 @@ export default function Messages({user,people,onNeedSignIn}:any){
    peer.ontrack=e=>{if(remoteVideo.current)remoteVideo.current.srcObject=e.streams[0]};
    peer.onicecandidate=e=>{if(e.candidate)void addLocalCandidates(e.candidate,initiator?"caller_candidates":"callee_candidates",c.id)};
    peer.onconnectionstatechange=()=>setCallStatus(peer.connectionState==="connected"?"Connected":peer.connectionState==="failed"?"Connection failed — network may need TURN":peer.connectionState);
-   if(initiator){const offer=await peer.createOffer();await peer.setLocalDescription(offer);await supabase.from("call_sessions").update({offer:offer.toJSON(),status:"ringing",updated_at:new Date().toISOString()}).eq("id",c.id)}
-   else if(c.offer){await peer.setRemoteDescription(new RTCSessionDescription(c.offer));const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await supabase.from("call_sessions").update({answer:answer.toJSON(),status:"accepted",updated_at:new Date().toISOString()}).eq("id",c.id);setIncoming(null)}
+   if(initiator){const offer=await peer.createOffer();await peer.setLocalDescription(offer);await supabase.from("call_sessions").update({offer:{type:offer.type,sdp:offer.sdp},status:"ringing",updated_at:new Date().toISOString()}).eq("id",c.id)}
+   else if(c.offer){await peer.setRemoteDescription(new RTCSessionDescription(c.offer));const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await supabase.from("call_sessions").update({answer:{type:answer.type,sdp:answer.sdp},status:"accepted",updated_at:new Date().toISOString()}).eq("id",c.id);setIncoming(null)}
   }catch(e:any){setCallStatus(e?.name==="NotAllowedError"?"Allow microphone/camera access to call.":e?.message||"Call couldn't start.");}
  };
  const beginCall=async(type:"audio"|"video")=>{
