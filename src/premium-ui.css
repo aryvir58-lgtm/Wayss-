@@ -12,6 +12,6 @@
 .flux-card video{display:block;width:100%;aspect-ratio:9/16;max-height:520px;object-fit:contain;background:#03050a}
 .flux-card-meta{padding:12px;display:grid;gap:5px}
 .flux-card-meta span{font-size:12px;color:var(--muted)}
-.ws-top-menu{top:12px;bottom:auto;right:14px;z-index:125}
+.ws-top-menu{top:12px;bottom:auto;right:14px;z-index:110}
 .topbar{padding-right:72px}
 @media(max-width:600px){.flux-grid{grid-template-columns:1fr}.ws-top-menu{top:10px;right:10px}.topbar{padding-right:60px}}
