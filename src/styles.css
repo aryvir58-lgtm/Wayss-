@@ -41,3 +41,13 @@
 .flux-message{position:absolute;z-index:6;top:65px;left:12px;right:12px;background:#251a20;border:1px solid #69404a;border-radius:10px;padding:10px;font-size:12px;display:flex;justify-content:space-between;gap:10px}.flux-message button{background:transparent;color:white;border:1px solid #ffffff55;border-radius:6px;padding:4px 8px}
 @media(max-width:800px){.flux-screen{inset:0;z-index:9}.flux-reel,.flux-reel-feed,.flux-empty{height:100dvh;min-height:100dvh}.flux-top-overlay{top:max(12px,env(safe-area-inset-top))}.flux-action-rail{right:8px;bottom:calc(92px + env(safe-area-inset-bottom));gap:13px}.flux-creator-meta{left:13px;bottom:calc(78px + env(safe-area-inset-bottom));right:66px}.flux-album-art{bottom:calc(78px + env(safe-area-inset-bottom));right:10px}.flux-empty{padding:26px}.flux-message{top:58px}}
 @media(min-width:801px){.flux-screen{inset:0 0 0 230px}.flux-reel{max-width:520px;margin:0 auto;border-left:1px solid #ffffff12;border-right:1px solid #ffffff12}.flux-reel-feed{background:#0a0b10}.flux-empty{max-width:520px;margin:0 auto}}
+
+.flux-search-button{border:0;background:transparent;color:#fff;width:42px;height:42px;display:grid;place-items:center;filter:drop-shadow(0 1px 4px #000);cursor:pointer}
+.flux-creator-name{border:0;background:transparent;color:#fff;padding:0;text-shadow:0 1px 4px #000}
+.flux-avatar-button{overflow:hidden;padding:0!important}.flux-avatar-button img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.flux-modal-backdrop{position:fixed;inset:0;z-index:50;background:#000b;display:grid;place-items:center;padding:16px}
+.flux-modal{width:min(440px,100%);max-height:min(75dvh,650px);overflow:auto;background:#13151d;border:1px solid #ffffff24;border-radius:18px;color:#f8f8fb;padding:18px;box-shadow:0 22px 70px #000a}
+.flux-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.flux-modal-head h2{font-size:18px;margin:0}.flux-modal-head button{border:0;background:transparent;color:#fff;padding:8px}
+.flux-search-input{width:100%;margin:14px 0;padding:12px;border:1px solid #ffffff22;border-radius:10px;background:#222530;color:white;outline:none}
+.flux-user-result{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:0;border-bottom:1px solid #ffffff12;background:transparent;color:white;padding:12px}
+.flux-profile-main{text-align:center;padding:18px 8px 8px}.flux-profile-main p{color:#a7aabb;font-size:12px}
