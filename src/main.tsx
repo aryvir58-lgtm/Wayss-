@@ -1,16 +1,12 @@
-import React from "react";
+import React,{useState} from "react";
 import { createRoot } from "react-dom/client";
 import App from "./AppV3";
 import Enhancements from "./Enhancements";
 import VeyaAI from "./VeyaAI";
 import ProfileOverlay from "./ProfileOverlay";
+import WayssSettings from "./WayssSettings";
 import "./styles.css";
+import "./premium-ui.css";
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-    <Enhancements />
-    <VeyaAI />
-    <ProfileOverlay />
-  </React.StrictMode>
-);
+function Shell(){const[settings,setSettings]=useState(false);return <><App/><Enhancements/><VeyaAI/><ProfileOverlay/><button className="ws-floating-settings" onClick={()=>setSettings(true)} aria-label="WAYSS Settings">⚙</button><WayssSettings open={settings} onClose={()=>setSettings(false)}/></>}
+createRoot(document.getElementById("root")!).render(<React.StrictMode><Shell/></React.StrictMode>);
