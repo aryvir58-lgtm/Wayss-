@@ -102,7 +102,7 @@ export default function Messages({user,people,onNeedSignIn}:any){
    peer.onicecandidate=e=>{if(e.candidate)void addLocalCandidates(e.candidate,initiator?"caller_candidates":"callee_candidates",c.id)};
    peer.onconnectionstatechange=()=>setCallStatus(peer.connectionState==="connected"?"Connected":peer.connectionState==="failed"?"Connection failed — network may need TURN":peer.connectionState);
    if(initiator){const offer=await peer.createOffer();await peer.setLocalDescription(offer);await supabase.from("call_sessions").update({offer:{type:offer.type,sdp:offer.sdp},status:"ringing",updated_at:new Date().toISOString()}).eq("id",c.id)}
-   else if(c.offer){await peer.setRemoteDescription(new RTCSessionDescription(c.offer));const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await supabase.from("call_sessions").update({answer:{type:answer.type,sdp:answer.sdp},status:"accepted",updated_at:new Date().toISOString()}).eq("id",c.id);setIncoming(null)}
+   else if(c.offer){await peer.setRemoteDescription(c.offer);const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await supabase.from("call_sessions").update({answer:{type:answer.type,sdp:answer.sdp},status:"accepted",updated_at:new Date().toISOString()}).eq("id",c.id);setIncoming(null)}
   }catch(e:any){setCallStatus(e?.name==="NotAllowedError"?"Allow microphone/camera access to call.":e?.message||"Call couldn't start.");}
  };
  const beginCall=async(type:"audio"|"video")=>{
@@ -119,11 +119,11 @@ export default function Messages({user,people,onNeedSignIn}:any){
    if(inCall){const latest=list.find(c=>c.id===inCall.id);if(!latest||["ended","declined","missed"].includes(latest.status)){await stopCall(latest?.status||"ended")}else{
      currentCall.current=latest;setCall(latest);
      const peer=pc.current;
-     if(peer&&inCall.caller_id===userId&&latest.answer&&!peer.currentRemoteDescription){await peer.setRemoteDescription(new RTCSessionDescription(latest.answer));setCallStatus("Connecting…")}
+     if(peer&&inCall.caller_id===userId&&latest.answer&&!peer.currentRemoteDescription){await peer.setRemoteDescription(latest.answer);setCallStatus("Connecting…")}
      const candidates=inCall.caller_id===userId?(latest.callee_candidates||[]):(latest.caller_candidates||[]);
-     while(peer&&remoteCandidateCount.current<candidates.length){const item=candidates[remoteCandidateCount.current++];try{await peer.addIceCandidate(new RTCIceCandidate(item))}catch{}}
+     while(peer&&remoteCandidateCount.current<candidates.length){const item=candidates[remoteCandidateCount.current++];try{await peer.addIceCandidate(item)}catch(e){console.error("WAYSS ICE candidate error:",e)}}
    }}
-  }catch{}finally{pollLock.current=false}
+  }catch(e){console.error("WAYSS call polling error:",e);setCallStatus(e instanceof Error?e.message:"Call signaling failed")}finally{pollLock.current=false}
  };const timer=window.setInterval(()=>void tick(),1300);void tick();return()=>{active=false;window.clearInterval(timer)}},[userId]);
  const toggleMic=()=>{const next=!micMuted;setMicMuted(next);localStream.current?.getAudioTracks().forEach(t=>t.enabled=!next)};
  const toggleCamera=()=>{const next=!cameraOff;setCameraOff(next);localStream.current?.getVideoTracks().forEach(t=>t.enabled=!next)};
