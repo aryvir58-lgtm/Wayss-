@@ -10,7 +10,7 @@ type RequestRow = {
 };
 type UserRow = { id: string; email: string; created_at: string; banned_until: string | null; profile: any };
 
-export default function VerificationCenter({ user, profile }: { user: any; profile: any }) {
+export default function VerificationCenter({ user, profile, onClose }: { user: any; profile: any; onClose?: () => void }) {
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
   const [realName, setRealName] = useState("");
   const [reason, setReason] = useState("");
@@ -22,6 +22,7 @@ export default function VerificationCenter({ user, profile }: { user: any; profi
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState("");
+  const [history, setHistory] = useState<any[]>([]);
 
   async function adminCall(body: Record<string, unknown>) {
     const { data, error } = await supabase.functions.invoke("admin-console", { body });
@@ -95,7 +96,7 @@ export default function VerificationCenter({ user, profile }: { user: any; profi
     finally { setBusy(false); }
   }
 
-  if (!user) return <section className="discover-card"><h3>Verification</h3><p>Sign in to request a verified badge.</p></section>;
+  if (!user) return <section className="verification-center"><div className="section-title"><h2>Verification</h2>{onClose && <button className="icon" onClick={onClose}><X size={18}/></button>}</div><p>Sign in to request a verified badge.</p></section>;
 
   if (isAdmin) {
     const visibleUsers = users.filter((u) => ((u.email || "") + " " + (u.profile?.username || "") + " " + (u.profile?.display_name || "")).toLowerCase().includes(filter.toLowerCase()));
@@ -120,16 +121,16 @@ export default function VerificationCenter({ user, profile }: { user: any; profi
   }
 
   const [history, setHistory] = useState<any[]>([]);
-  return <VerificationRequestForm user={user} profile={profile} realName={realName} setRealName={setRealName} reason={reason} setReason={setReason} file={file} setFile={setFile} busy={busy} status={status} submitRequest={submitRequest} history={history} setHistory={setHistory}/>;
+  return <VerificationRequestForm user={user} profile={profile} realName={realName} setRealName={setRealName} reason={reason} setReason={setReason} file={file} setFile={setFile} busy={busy} status={status} submitRequest={submitRequest} history={history} setHistory={setHistory} onClose={onClose}/>;
 }
 
-function VerificationRequestForm({user,profile,realName,setRealName,reason,setReason,file,setFile,busy,status,submitRequest,history,setHistory}:any) {
+function VerificationRequestForm({user,profile,realName,setRealName,reason,setReason,file,setFile,busy,status,submitRequest,history,setHistory,onClose}:any) {
   useEffect(() => { let alive = true; (async () => {
     const { data, error } = await supabase.from("verification_requests").select("id,status,decision_note,created_at,reviewed_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
     if (alive && !error) setHistory(data || []);
   })(); return () => { alive = false; }; }, [user.id, status]);
   return <section className="verification-center">
-    <div className="section-title"><div><p className="eyebrow">ACCOUNT STATUS</p><h2>Verification</h2></div>{profile?.is_verified && <span className="verified-badge"><BadgeCheck size={16}/> Verified</span>}</div>
+    <div className="section-title"><div><p className="eyebrow">ACCOUNT STATUS</p><h2>Verification</h2></div><div style={{display:"flex",alignItems:"center",gap:8}}>{profile?.is_verified && <span className="verified-badge"><BadgeCheck size={16}/> Verified</span>}{onClose && <button className="icon" onClick={onClose}><X size={18}/></button>}</div></div>
     {profile?.is_verified ? <div className="discover-card"><BadgeCheck size={24}/><h3>Your account is verified</h3><p>Your verified badge is active.</p></div> : <div className="discover-card verification-form">
       <h3>Request a verified badge</h3><p>Submit your real name, one identity document, and a clear reason for requesting verification. Your document is stored privately and is visible only to you and the WAYSS admin.</p>
       <label>Real full name<input value={realName} onChange={(e) => setRealName(e.target.value)} maxLength={160} placeholder="Name shown on your identity document"/></label>
