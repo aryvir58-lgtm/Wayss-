@@ -78,3 +78,42 @@
 .profile-page .profile-empty{padding:34px 16px;text-align:center;border:1px dashed var(--line);border-radius:16px;opacity:.8}
 .profile-page .profile-empty h3{margin:10px 0 6px}
 @media(max-width:600px){.profile-page .profile-hero{padding:16px;gap:12px}.profile-page .profile-avatar{width:68px;height:68px}.profile-page .profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-page .profile-stats{gap:6px}.profile-page .profile-stats .discover-card{padding:10px 4px}.app.messages-mode .messages-page .messages-list{border-right:0!important}}
+
+
+/* Mobile layout fixes: keep composer/modal clear of bottom navigation and preserve message search. */
+@media (max-width:760px), (hover:none){
+  .app.messages-mode{display:block!important;min-height:100dvh}
+  .app.messages-mode .sidebar{display:none!important}
+  .app.messages-mode main{margin:0!important;width:100%!important;min-width:0!important;max-width:100%!important}
+  .app.messages-mode main>.content{margin:0!important;padding:8px 8px calc(82px + env(safe-area-inset-bottom))!important;width:100%!important;height:calc(100dvh - 8px)!important;min-height:0!important;overflow:hidden!important;box-sizing:border-box}
+  .app.messages-mode .messages-page{width:100%!important;max-width:100%!important;min-width:0!important;height:100%!important;min-height:0!important;grid-template-columns:minmax(0,1fr)!important;overflow:hidden!important}
+  .app.messages-mode .messages-list{width:100%!important;min-width:0!important;max-width:100%!important;border:0!important}
+  .app.messages-mode .messages-list>div:first-child{padding:12px!important;flex-shrink:0}
+  .app.messages-mode .messages-list h1{margin:4px 0 10px!important}
+  .app.messages-mode .messages-list .search{display:flex!important;visibility:visible!important;opacity:1!important;width:100%!important;min-width:0!important}
+  .app.messages-mode .messages-list .search input{display:block!important;visibility:visible!important;opacity:1!important;min-width:0!important;width:100%!important}
+  .app.messages-mode .messages-list>div:last-child{flex:1!important;min-height:0!important;overflow-y:auto!important;max-height:none!important}
+  .app.messages-mode .message-window{width:100%!important;min-width:0!important;max-width:100%!important;height:100%!important;min-height:0!important}
+  .app.messages-mode .messages-chat-open .messages-list{display:none!important}
+  .app.messages-mode .messages-chat-open .message-window{display:flex!important}
+  .app.messages-mode .message-header{min-width:0!important;gap:5px!important;padding:8px!important}
+  .app.messages-mode .message-header .avatar{width:34px!important;height:34px!important;flex-shrink:0}
+  .app.messages-mode .message-header>div{min-width:0!important}
+  .app.messages-mode .message-header button{flex-shrink:0!important}
+  .app.messages-mode .message-header button.outline{padding:6px!important;font-size:0!important;gap:0!important}
+  .app.messages-mode .message-header button.outline svg{margin:0!important}
+  .app.messages-mode .message-composer{width:100%!important;box-sizing:border-box!important;padding:8px!important;gap:6px!important}
+  .app.messages-mode .message-composer .message-input{width:0!important;flex:1 1 0!important;min-width:0!important}
+  .app.messages-mode .message-composer button.primary{padding:10px!important;flex-shrink:0!important}
+  .app.messages-mode .message-history{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important}
+  .app.messages-mode .mobile-nav{bottom:env(safe-area-inset-bottom,0px)!important;padding-bottom:env(safe-area-inset-bottom,0px)!important}
+  .app.messages-mode .mobile-nav button{min-width:0!important;padding-left:4px!important;padding-right:4px!important}
+}
+@media (max-width:600px){
+  .modal-backdrop{align-items:flex-end!important;padding:8px 8px calc(78px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;box-sizing:border-box!important}
+  .modal-backdrop .modal{width:100%!important;max-width:100%!important;max-height:calc(100dvh - 112px - env(safe-area-inset-bottom))!important;overflow-y:auto!important;box-sizing:border-box!important;padding:18px!important;border-radius:24px!important}
+  .modal-backdrop .modal textarea{width:100%!important;max-width:100%!important;min-height:130px!important;box-sizing:border-box!important;resize:vertical}
+  .modal-backdrop .modal .filters{display:flex!important;flex-wrap:wrap!important;gap:7px!important}
+  .modal-backdrop .modal .filters .chip{padding:9px 12px!important;font-size:14px!important}
+  .mobile-nav{z-index:1100!important}
+}
