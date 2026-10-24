@@ -9,5 +9,6 @@ import "./styles.css";
 import "./premium-ui.css";
 import "./liquid-glass-ui.css";
 import "./wayss-v2-ui.css";
+import "./wayss-fixes.css";
 function Shell(){return <><App/><VeyaAI/><ProfileOverlay/><AccessGate/><Personalization/></>}
 createRoot(document.getElementById("root")!).render(<React.StrictMode><Shell/></React.StrictMode>);
