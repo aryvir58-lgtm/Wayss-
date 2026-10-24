@@ -145,17 +145,22 @@ function SettingsPanel({user,profile,onClose,onEditProfile,onProfileUpdate}:any)
   if(newPassword!==confirmPassword){setPasswordMsg("New password and confirmation do not match.");return}
   setPasswordBusy(true);
   try{
+   const recoveryMode = window.location.hash.includes("type=recovery") || new URLSearchParams(window.location.search).get("type")==="recovery";
+   const { data: sessionData } = await supabase.auth.getSession();
+   if(!sessionData.session){setPasswordMsg("Your session expired. Sign in again, then open Settings and try once more.");setPasswordBusy(false);return}
    if(currentPassword.trim()){
     const check=await supabase.auth.signInWithPassword({email:user.email,password:currentPassword});
     if(check.error){setPasswordMsg("Current password is incorrect.");setPasswordBusy(false);return}
    }else{
     const{data}=await supabase.auth.getUser();
+    const providers=Array.isArray(data.user?.identities)?data.user.identities.map((i:any)=>i.provider):[];
     const provider=String(data.user?.app_metadata?.provider||"");
-    if(provider!=="google"&&provider!==""){setPasswordMsg("Enter your current password to change an existing password. Leave it empty only when setting one for the first time.");setPasswordBusy(false);return}
+    const canSetWithoutCurrent = recoveryMode || provider==="google" || providers.includes("google");
+    if(!canSetWithoutCurrent){setPasswordMsg("Enter your current password. To set a new one without it, use a password-reset link first.");setPasswordBusy(false);return}
    }
    const{error}=await supabase.auth.updateUser({password:newPassword});
    if(error)setPasswordMsg(error.message);
-   else{setPasswordMsg("Password saved successfully. Use your new password next time.");setCurrentPassword("");setNewPassword("");setConfirmPassword("");setShowPasswordFields(false)}
+   else{setPasswordMsg("Password saved successfully. Use your new password next time.");setCurrentPassword("");setNewPassword("");setConfirmPassword("");setShowPasswordFields(false);if(recoveryMode){window.history.replaceState(null,"",window.location.pathname+window.location.search)}}
   }catch(e:any){setPasswordMsg(e?.message||"Could not update password. Please try again.")}
   setPasswordBusy(false);
  }
