@@ -36,6 +36,26 @@ Deno.serve(async (req: Request) => {
   const audit = async (actionName: string, targetId: string | null, details: Record<string, unknown> = {}) => {
     await admin.from("admin_audit_log").insert({ actor_id: actor.id, target_user_id: targetId, action: actionName, details });
   };
+  const removeUserFiles = async (bucket: string, userId: string) => {
+    const walk = async (folder: string): Promise<void> => {
+      let offset = 0;
+      while (true) {
+        const { data, error } = await admin.storage.from(bucket).list(folder, { limit: 100, offset });
+        if (error) throw error;
+        if (!data?.length) break;
+        const files: string[] = [];
+        for (const item of data as any[]) {
+          const path = folder ? folder + "/" + item.name : item.name;
+          if (item.id == null && !item.metadata) await walk(path);
+          else files.push(path);
+        }
+        if (files.length) { const { error: removeError } = await admin.storage.from(bucket).remove(files); if (removeError) throw removeError; }
+        if (data.length < 100) break;
+        offset += 100;
+      }
+    };
+    await walk(userId);
+  };
 
   try {
     if (action === "list") {
@@ -143,6 +163,8 @@ Deno.serve(async (req: Request) => {
       return reply(200, { ok: true, action });
     }
     if (action === "delete_user") {
+      await removeUserFiles("wayss-media", targetId);
+      await removeUserFiles("verification-documents", targetId);
       await audit("user_deleted", targetId, { email: targetResult.user.email || "" });
       const { error } = await admin.auth.admin.deleteUser(targetId);
       if (error) throw error;
