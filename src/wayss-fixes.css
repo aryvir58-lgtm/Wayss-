@@ -4,3 +4,42 @@
   .topbar .mobile-brand{flex:1;min-width:0}
 }
 .orbit-contact-button{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+
+
+/* Messages-only desktop inbox layout; all other sections keep their existing navigation/UI. */
+.app.messages-mode .sidebar{width:76px; padding:20px 10px; transition:width .2s ease,padding .2s ease; overflow-x:hidden}
+.app.messages-mode .sidebar:hover,.app.messages-mode .sidebar:focus-within{width:230px; padding:24px 16px}
+.app.messages-mode .sidebar .brand{padding:0 10px 26px; min-width:190px}
+.app.messages-mode .sidebar .brand>div:last-child,.app.messages-mode .sidebar .nav span{opacity:0;visibility:hidden;white-space:nowrap;transition:opacity .12s ease}
+.app.messages-mode .sidebar:hover .brand>div:last-child,.app.messages-mode .sidebar:focus-within .brand>div:last-child,.app.messages-mode .sidebar:hover .nav span,.app.messages-mode .sidebar:focus-within .nav span{opacity:1;visibility:visible}
+.app.messages-mode main{margin-left:76px; transition:margin-left .2s ease}
+.app.messages-mode .sidebar:hover~main,.app.messages-mode .sidebar:focus-within~main{margin-left:230px}
+.app.messages-mode main>.content{width:100%;max-width:none;margin:0;padding:14px;height:calc(100dvh - 70px);min-height:0;box-sizing:border-box}
+.app.messages-mode .messages-page{grid-template-columns:minmax(260px,340px) minmax(0,1fr)!important;gap:14px!important;height:100%;min-height:0!important}
+.app.messages-mode .messages-list,.app.messages-mode .message-window{display:flex!important;min-height:0!important;height:100%;border-radius:16px!important}
+.app.messages-mode .messages-list{flex-direction:column}
+.app.messages-mode .messages-list>div:last-child{flex:1;max-height:none!important;min-height:0}
+.app.messages-mode .message-window{min-width:0}
+.app.messages-mode .message-history{min-height:0}
+.app.messages-mode .message-back{display:none}
+@media (hover:none), (max-width:760px){
+ .app.messages-mode .sidebar,.app.messages-mode .sidebar:hover,.app.messages-mode .sidebar:focus-within{width:0;padding:0;border:0;visibility:hidden}
+ .app.messages-mode main,.app.messages-mode .sidebar:hover~main,.app.messages-mode .sidebar:focus-within~main{margin-left:0}
+ .app.messages-mode main>.topbar{display:none}
+ .app.messages-mode main>.content{height:calc(100dvh - 64px);padding:8px;width:100%;overflow:hidden}
+ .app.messages-mode .messages-page{grid-template-columns:minmax(0,1fr)!important;gap:0!important;height:100%;min-height:0!important}
+ .app.messages-mode .messages-list{display:flex!important;height:100%;border-radius:14px!important}
+ .app.messages-mode .message-window{display:none!important}
+ .app.messages-mode .messages-chat-open .messages-list{display:none!important}
+ .app.messages-mode .messages-chat-open .message-window{display:flex!important;height:100%;border-radius:14px!important}
+ .app.messages-mode .messages-chat-open .message-back{display:grid}
+ .app.messages-mode .messages-list>div:first-child{padding:14px!important}
+ .app.messages-mode .messages-list>div:last-child{max-height:none!important;flex:1;min-height:0}
+ .app.messages-mode .message-header{gap:7px!important;padding:10px!important;flex-wrap:nowrap}
+ .app.messages-mode .message-header .outline{padding:7px!important}
+ .app.messages-mode .message-header button{flex-shrink:0}
+ .app.messages-mode .message-composer{padding:10px!important;gap:6px!important}
+ .app.messages-mode .message-composer .primary{padding:10px!important}
+ .app.messages-mode .message-history{padding:12px!important}
+ .app.messages-mode .mobile-nav{position:fixed;bottom:0;left:0;right:0;z-index:1001}
+}
