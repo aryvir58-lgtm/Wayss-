@@ -6,6 +6,7 @@ import VeyaAI from "./VeyaAI";
 import ProfileOverlay from "./ProfileOverlay";
 import "./styles.css";
 import "./premium-ui.css";
+import "./liquid-glass-ui.css";
 
 function Shell(){return <><App/><VeyaAI/><ProfileOverlay/></>}
 createRoot(document.getElementById("root")!).render(<React.StrictMode><Shell/></React.StrictMode>);
