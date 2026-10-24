@@ -34,7 +34,7 @@ jobs:
         run: npm run build
 
       - name: Install Capacitor Android tools
-        run: npm install --no-save @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+        run: npm install --no-save @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7 @capacitor/app@7
 
       - name: Configure Capacitor
         run: |
@@ -49,6 +49,26 @@ jobs:
 
       - name: Generate Android project
         run: npx cap add android
+
+      - name: Add WAYSS OAuth deep link
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          marker = '</activity>'
+          intent = '''
+              <intent-filter>
+                  <action android:name="android.intent.action.VIEW" />
+                  <category android:name="android.intent.category.DEFAULT" />
+                  <category android:name="android.intent.category.BROWSABLE" />
+                  <data android:scheme="wayss" android:host="auth" android:pathPrefix="/callback" />
+              </intent-filter>
+          '''
+          if 'android:scheme="wayss"' not in s:
+              s = s.replace(marker, intent + '\n        ' + marker, 1)
+              p.write_text(s)
+          PY
 
       - name: Sync web app into Android project
         run: npx cap sync android
