@@ -46,7 +46,7 @@ export default function AppV3(){
   setPeopleBusy(true);setPeopleError("");
   let ps:any[]=[];
   if(searchTerm){
-   const term=searchTerm.replace(/[^a-zA-Z0-9_ -]/g," ").replace(/\s+/g," ").trim();
+   const term=searchTerm.trim().replace(/^@/,"").replace(/[%,()."'\\]/g," ").replace(/\s+/g," ").trim();
    if(!term){setPeople([]);setPeopleBusy(false);return;}
    const {data,error}=await supabase.from("profiles").select("id,username,display_name,bio,avatar_url,is_private,active_status,created_at,is_verified").neq("id",user.id).eq("active_status",true).or(`username.ilike.%${term}%,display_name.ilike.%${term}%`).order("username").limit(50);
    if(error){setPeopleError(error.message||"Could not search people");setPeopleBusy(false);return;}
