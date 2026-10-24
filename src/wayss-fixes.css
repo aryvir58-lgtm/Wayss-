@@ -43,3 +43,38 @@
  .app.messages-mode .message-history{padding:12px!important}
  .app.messages-mode .mobile-nav{position:fixed;bottom:0;left:0;right:0;z-index:1001}
 }
+
+
+/* One unified inbox surface: conversation list and active chat live inside the same panel. */
+.app.messages-mode .messages-page{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden;gap:0!important}
+.app.messages-mode .messages-page .messages-list,
+.app.messages-mode .messages-page .message-window{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.app.messages-mode .messages-page .messages-list{border-right:1px solid var(--line)!important}
+.app.messages-mode .messages-page .message-window{min-height:0!important}
+.app.messages-mode .messages-page .messages-list>div:first-child{border-bottom:1px solid var(--line)}
+.app.messages-mode .messages-page .messages-list>div:last-child{overflow-y:auto}
+.app.messages-mode .profile-page{width:100%;max-width:920px;margin:0 auto;padding-bottom:24px}
+.app.messages-mode .profile-page{ /* scoped away from other screens by selector below */ }
+.profile-page .profile-hero{padding:24px;border:1px solid var(--line);border-radius:22px;background:var(--panel);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.profile-page .profile-avatar{width:88px;height:88px;font-size:28px;flex-shrink:0}
+.profile-page .profile-details{flex:1;min-width:200px}
+.profile-page .profile-details h1{margin:4px 0}
+.profile-page .profile-handle{opacity:.7}
+.profile-page .profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.profile-page .profile-stats .discover-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px}
+.profile-page .profile-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:20px 0 14px;border-bottom:1px solid var(--line)}
+.profile-page .profile-tabs button{padding:13px 8px;background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;font-weight:650;cursor:pointer}
+.profile-page .profile-tabs button.active{color:var(--text);border-bottom-color:var(--accent,#8b72ff)}
+.profile-page .profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.profile-page .profile-tile{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.profile-page .profile-tile>img,.profile-page .profile-tile>video{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#090b12}
+.profile-page .profile-tile p,.profile-page .profile-tile small{display:block;margin:9px 10px;overflow-wrap:anywhere}
+.profile-page .profile-tile small{opacity:.65}
+.profile-page .profile-echoes{display:grid;gap:10px}
+.profile-page .profile-echo{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.profile-page .profile-echo-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.profile-page .profile-echo-meta span{font-size:12px;opacity:.65}
+.profile-page .profile-echo>p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.profile-page .profile-empty{padding:34px 16px;text-align:center;border:1px dashed var(--line);border-radius:16px;opacity:.8}
+.profile-page .profile-empty h3{margin:10px 0 6px}
+@media(max-width:600px){.profile-page .profile-hero{padding:16px;gap:12px}.profile-page .profile-avatar{width:68px;height:68px}.profile-page .profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-page .profile-stats{gap:6px}.profile-page .profile-stats .discover-card{padding:10px 4px}.app.messages-mode .messages-page .messages-list{border-right:0!important}}
