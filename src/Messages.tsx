@@ -9,7 +9,7 @@ type Call={id:string;conversation_id:string;caller_id:string;callee_id:string;me
 const RTC_CONFIG:RTCConfiguration={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]};
 const initials=(p:any)=>String(p?.display_name||p?.username||"W").trim().slice(0,1).toUpperCase();
 const time=(s:string)=>new Date(s).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-export default function Messages({user,people,onNeedSignIn,active=true}:any){
+export default function Messages({user,people,onNeedSignIn,active=true,initialPeer,onPeerHandled}:any){
  const [threads,setThreads]=useState<Thread[]>([]),[selected,setSelected]=useState<Thread|null>(null),[rows,setRows]=useState<Msg[]>([]),[query,setQuery]=useState(""),[body,setBody]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[err,setErr]=useState(""),[muted,setMuted]=useState(false),[menu,setMenu]=useState(false),[call,setCall]=useState<Call|null>(null),[incoming,setIncoming]=useState<Call|null>(null),[micMuted,setMicMuted]=useState(false),[cameraOff,setCameraOff]=useState(false),[callStatus,setCallStatus]=useState(""),[emojiOpen,setEmojiOpen]=useState(false),[actionMessage,setActionMessage]=useState<string|null>(null),[editingMessage,setEditingMessage]=useState<Msg|null>(null),[editDraft,setEditDraft]=useState(""),[blocked,setBlocked]=useState(false),[blockBusy,setBlockBusy]=useState(false);
  const holdTimer=useRef<number|null>(null);
  const pc=useRef<RTCPeerConnection|null>(null),localStream=useRef<MediaStream|null>(null),remoteVideo=useRef<HTMLVideoElement|null>(null),localVideo=useRef<HTMLVideoElement|null>(null),processedCandidates=useRef(0),seenIncoming=useRef<string|null>(null),currentCall=useRef<Call|null>(null),remoteCandidateCount=useRef(0),pollLock=useRef(false);
@@ -59,6 +59,7 @@ export default function Messages({user,people,onNeedSignIn,active=true}:any){
  },[selected?.id,selected?.peer.id,loadMessages,loadBlockStatus]);
  useEffect(()=>{const handler=(event:Event)=>{const peer=(event as CustomEvent<Person>).detail;if(peer?.id&&peer.id!==userId)void startThread(peer)};window.addEventListener("wayss:start-chat",handler);return()=>window.removeEventListener("wayss:start-chat",handler)},[userId,threads]);
  useEffect(()=>{const ch=supabase?.channel("wayss-inbox-"+userId).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},()=>{void loadThreads();if(selected)void loadMessages(selected.id)}).subscribe();return()=>{if(ch&&supabase)void supabase.removeChannel(ch)}},[userId,selected?.id,loadThreads,loadMessages]);
+ useEffect(()=>{if(active&&initialPeer?.id&&initialPeer.id!==userId){void startThread(initialPeer);onPeerHandled?.()}},[active,initialPeer?.id,userId]);
  const startThread=async(peer:Person)=>{
   if(!supabase||!userId){setErr("Please sign in again to start a chat.");return}
   setErr("");setBusy(true);
