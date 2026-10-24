@@ -120,7 +120,6 @@ export default function VerificationCenter({ user, profile, onClose }: { user: a
     </section>;
   }
 
-  const [history, setHistory] = useState<any[]>([]);
   return <VerificationRequestForm user={user} profile={profile} realName={realName} setRealName={setRealName} reason={reason} setReason={setReason} file={file} setFile={setFile} busy={busy} status={status} submitRequest={submitRequest} history={history} setHistory={setHistory} onClose={onClose}/>;
 }
 
