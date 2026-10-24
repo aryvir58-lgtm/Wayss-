@@ -177,3 +177,15 @@
 .wayss-follow-list .person small{display:block;opacity:.7;margin-top:2px}
 .message-header [data-wayss-profile]{cursor:pointer}
 .message-header [data-wayss-profile]:focus-visible{outline:2px solid var(--accent,#8b72ff);outline-offset:3px;border-radius:8px}
+
+
+/* Orbit's only people-search control: visible on phones inside Orbit, never on other screens. */
+.orbit-search-mobile{display:none;margin:0 0 16px;width:100%;box-sizing:border-box}
+.orbit-search-mobile input{min-width:0;width:100%}
+.notice-request-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.notice-request-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 11px;font-size:12px}
+@media(max-width:760px){
+  .topbar .orbit-global-search{display:none}
+  .orbit-search-mobile{display:flex;align-items:center;gap:9px}
+  .orbit-search-mobile input{flex:1}
+}
