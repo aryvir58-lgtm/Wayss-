@@ -196,3 +196,13 @@
 .mobile-nav .mobile-notification-count{position:absolute;top:3px;right:calc(50% - 25px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ff5268;color:white;font-size:10px;font-style:normal;font-weight:800;display:grid;place-items:center}
 .mobile-nav button{position:relative;flex:0 0 auto}
 .mobile-nav button:last-child{min-width:52px}
+
+/* Make the notification destination visibly available on desktop and phones. */
+.sidebar .side-bottom .nav{position:relative}
+.sidebar-notification-count{margin-left:auto;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ff5268;color:#fff;font-size:10px;font-style:normal;font-weight:800;display:grid;place-items:center}
+@media(max-width:800px){
+  .mobile-nav{display:flex!important;align-items:stretch;justify-content:flex-start;gap:0;overflow-x:auto;overflow-y:hidden;padding-bottom:env(safe-area-inset-bottom);height:calc(62px + env(safe-area-inset-bottom));box-sizing:content-box;scrollbar-width:none}
+  .mobile-nav::-webkit-scrollbar{display:none}
+  .mobile-nav button{flex:1 0 58px;min-width:58px;position:relative}
+  .mobile-nav .mobile-notification-count{right:calc(50% - 24px);top:2px}
+}
