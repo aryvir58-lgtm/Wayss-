@@ -1,5 +1,8 @@
 name: Build WAYSS
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -80,6 +83,21 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
+
+      - name: Publish latest APK download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          if ! gh release view latest >/dev/null 2>&1; then
+            gh release create latest "$APK_PATH#wayss.apk" \
+              --title "WAYSS Latest APK" \
+              --notes "Latest successful WAYSS Android build. Download wayss.apk and install it on your Android phone." \
+              --target "$GITHUB_SHA"
+          else
+            gh release upload latest "$APK_PATH#wayss.apk" --clobber
+            gh release edit latest --title "WAYSS Latest APK" --notes "Latest successful WAYSS Android build. Download wayss.apk and install it on your Android phone." --latest
+          fi
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
