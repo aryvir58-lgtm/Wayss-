@@ -179,7 +179,7 @@ function SettingsPanel({user,profile,onClose,onEditProfile,onProfileUpdate}:any)
  <section className="wayss-install-card">
    <div className="wayss-install-orbit" aria-hidden="true"><div className="wayss-install-phone"><span>W</span></div><i></i><b></b></div>
    <div className="wayss-install-copy"><p className="eyebrow">YOUR SPACE, ON YOUR PHONE</p><h3>Get the WAYSS app</h3><p>Install the latest Android version for a smoother, app-like experience.</p></div>
-   <a className="wayss-install-cta" href="https://github.com/aryvir58-lgtm/Wayss-/releases/download/latest/wayss.apk" target="_blank" rel="noreferrer"><Download size={17}/> Download for Android <ArrowDownToLine size={16}/></a>
+   <a className="wayss-install-cta" href="https://github.com/aryvir58-lgtm/Wayss-/releases/download/latest/app-debug.apk" target="_blank" rel="noreferrer"><Download size={17}/> Download for Android <ArrowDownToLine size={16}/></a>
    <small className="wayss-install-note"><ShieldCheck size={13}/> Latest APK updates automatically after a successful build.</small>
  </section>
  <h3 style={{marginBottom:0}}>Appearance</h3>{row("Dark theme","Calm, low-light interface",dark,setDark)}{row("Compact layout","Save space in feeds and panels",compact,setCompact)}{row("Reduce animations","Limit motion effects",motion,setMotion)}
