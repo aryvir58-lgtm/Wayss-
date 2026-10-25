@@ -8,6 +8,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: wayss-main-build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
