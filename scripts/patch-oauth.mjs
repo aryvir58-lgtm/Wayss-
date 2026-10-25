@@ -32,5 +32,37 @@ if (!s.includes("WAYSS OAuth callback error")) {
   s = s.replace(marker, bridge + marker);
 }
 
+
+// Keep the Android bottom bar to exactly five tabs. Messages live beside the
+// hamburger in the top bar; the center Plus remains the post composer.
+const oldNav = 'const unread=notices.filter(n=>!n.read_at).length;const nav:any=[["Feed",Home],["Orbit",Compass],["Messages",MessageCircle],["Create",Plus],["Flux",Video],["You",UserRound]];';
+const newNav = 'const unread=notices.filter(n=>!n.read_at).length;const nav:any=[["Feed",Home],["Orbit",Compass],["Create",Plus],["Flux",Video],["You",UserRound]];';
+if (s.includes(oldNav)) s=s.replace(oldNav,newNav);
+else if (!s.includes(newNav)) throw new Error("WAYSS navigation tabs declaration was not found.");
+
+const oldMenu = '<button className="icon mobile-settings-menu" title="Settings" aria-label="Settings" onClick={()=>setSettingsOpen(true)}><Menu size={21}/></button>';
+const newMenu = '<button className="icon mobile-settings-menu" title="Menu / Settings" aria-label="Menu / Settings" onClick={()=>setSettingsOpen(true)}><Menu size={21}/></button><button className={"icon mobile-messages-button"+(screen==="Messages"?" active":"")} title="Messages" aria-label="Messages" onClick={()=>setScreen("Messages")}><MessageCircle size={20}/></button>';
+if (s.includes(oldMenu)) s=s.replace(oldMenu,newMenu);
+else if (!s.includes('className="icon mobile-messages-button"') && !s.includes('mobile-messages-button"')) throw new Error("WAYSS top menu button was not found.");
+
+const oldOrbitSearch = '{screen==="Orbit"&&<div className="search orbit-global-search"><Search size={17}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Find people by name or @username" aria-label="Find people"/></div>}';
+const newOrbitSearch = '{screen==="Orbit"&&<div className="search orbit-global-search"><Search size={17}/><input id="wayss-orbit-user-search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Find people by name or @username" aria-label="Find people"/></div>}';
+if (s.includes(oldOrbitSearch)) s=s.replace(oldOrbitSearch,newOrbitSearch);
+
+const oldTopActions = '<div className="top-actions"><button className="icon" title="Notifications"';
+const newTopActions = '<div className="top-actions"><button className="icon mobile-user-search-button" title="Search people" aria-label="Search people" onClick={()=>{setScreen("Orbit");window.setTimeout(()=>document.getElementById("wayss-orbit-user-search")?.focus(),80)}}><Search size={19}/></button><button className="icon" title="Notifications"';
+if (s.includes(oldTopActions)) s=s.replace(oldTopActions,newTopActions);
+else if (!s.includes('mobile-user-search-button')) throw new Error("WAYSS top actions were not found.");
+
+// The notification shortcut is desktop/sidebar only. This avoids a sixth
+// mobile tab and keeps the post composer centered.
+const oldMobileNav = '</div><div className="mobile-nav">{nav.map(([n,I]:any)=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}<button className={noticeOpen?"active":""} onClick={()=>{setNoticeOpen(true);markRead()}} aria-label="Notifications"><Bell size={20}/><span>Alerts</span>{unread>0&&<i className="mobile-notification-count">{unread>9?"9+":unread}</i>}</button></div>';
+const newMobileNav = '</div><div className="mobile-nav">{nav.map(([n,I]:any)=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)} aria-label={n}><I size={20}/><span>{n}</span></button>)}</div>';
+if (s.includes(oldMobileNav)) s=s.replace(oldMobileNav,newMobileNav);
+else if (!s.includes('mobile-nav">{nav.map')) throw new Error("WAYSS mobile navigation block was not found.");
+
+fs.writeFileSync(path, s);
+console.log("WAYSS navigation and OAuth patch applied.");
+
 fs.writeFileSync(path, s);
 console.log("WAYSS Android OAuth browser/deep-link patch applied.");
