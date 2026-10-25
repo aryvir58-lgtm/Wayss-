@@ -51,7 +51,10 @@ if (s.includes(oldOrbitSearch)) s=s.replace(oldOrbitSearch,newOrbitSearch);
 
 const oldTopActions = '<div className="top-actions"><button className="icon" title="Notifications"';
 const newTopActions = '<div className="top-actions"><button className="icon mobile-user-search-button" title="Search people" aria-label="Search people" onClick={()=>{setScreen("Orbit");window.setTimeout(()=>document.getElementById("wayss-orbit-user-search")?.focus(),80)}}><Search size={19}/></button><button className="icon" title="Notifications"';
+const oldRefreshActions = '<div className="top-actions"><button className="icon" title="Refresh WAYSS"';
+const newRefreshActions = '<div className="top-actions"><button className="icon mobile-user-search-button" title="Search people" aria-label="Search people" onClick={()=>{setScreen("Orbit");window.setTimeout(()=>document.getElementById("wayss-orbit-user-search")?.focus(),80)}}><Search size={19}/></button><button className="icon" title="Refresh WAYSS"';
 if (s.includes(oldTopActions)) s=s.replace(oldTopActions,newTopActions);
+else if (s.includes(oldRefreshActions) && !s.includes('mobile-user-search-button')) s=s.replace(oldRefreshActions,newRefreshActions);
 else if (!s.includes('mobile-user-search-button')) throw new Error("WAYSS top actions were not found.");
 
 // The notification shortcut is desktop/sidebar only. This avoids a sixth
