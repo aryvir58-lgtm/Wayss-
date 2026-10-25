@@ -61,6 +61,45 @@ const newMobileNav = '</div><div className="mobile-nav">{nav.map(([n,I]:any)=><b
 if (s.includes(oldMobileNav)) s=s.replace(oldMobileNav,newMobileNav);
 else if (!s.includes('mobile-nav">{nav.map')) throw new Error("WAYSS mobile navigation block was not found.");
 
+
+const cssPath = "src/wayss-fixes.css";
+const navCss = `
+/* WAYSS mobile tab-bar + top actions: exactly five tabs, no overlap */
+@media (max-width: 800px) {
+  .mobile-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+    padding: 5px !important;
+    overflow: hidden !important;
+  }
+  .mobile-nav button { min-width: 0 !important; width: 100% !important; }
+  .mobile-nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-settings-menu { order: 0 !important; flex: 0 0 38px !important; }
+  .mobile-messages-button { order: 1 !important; flex: 0 0 38px !important; }
+  .mobile-brand { order: 2 !important; min-width: 0 !important; flex: 0 1 auto !important; }
+  .top-actions { order: 4 !important; margin-left: auto !important; flex: 0 0 auto !important; }
+  .orbit-global-search { order: 3 !important; flex: 1 1 100px !important; min-width: 0 !important; width: auto !important; }
+  .mobile-user-search-button { display: grid !important; }
+  .mobile-nav button:nth-child(3) { /* center Create (+) */ }
+  .mobile-nav button:nth-child(3) svg { width: 24px !important; height: 24px !important; stroke-width: 2.3 !important; }
+}
+@media (min-width: 801px) {
+  .mobile-messages-button, .mobile-user-search-button { display: none !important; }
+}
+@media (max-width: 420px) {
+  .topbar { gap: 5px !important; padding-inline: 8px !important; }
+  .mobile-brand b { font-size: 13px !important; }
+  .mobile-brand .logo { width: 29px !important; height: 29px !important; }
+  .mobile-settings-menu, .mobile-messages-button { flex-basis: 34px !important; width: 34px !important; min-width: 34px !important; }
+  .mobile-settings-menu svg, .mobile-messages-button svg { width: 19px !important; height: 19px !important; }
+  .top-actions { gap: 3px !important; }
+}
+`;
+let css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf8") : "";
+if (!css.includes("WAYSS mobile tab-bar + top actions")) {
+  fs.appendFileSync(cssPath, "\\n" + navCss + "\\n");
+}
+
 fs.writeFileSync(path, s);
 console.log("WAYSS navigation and OAuth patch applied.");
 
