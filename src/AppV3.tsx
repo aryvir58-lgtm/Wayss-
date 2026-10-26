@@ -133,8 +133,9 @@ function Profile({profile,user,signin,edit,posts=[],fluxPosts=[],like,save,comme
  const items=tab==="Posts"?imagePosts:tab==="Echoes"?textPosts:reels;
  return <section className="profile-page">
   <div className="profile-hero wayss-profile-hero profile-cinematic">
-   <div className={"profile-cover-art profile-photo-hero "+(profile?.avatar_url?"has-profile-photo":"is-empty-profile")} style={profile?.avatar_url?{backgroundImage:"linear-gradient(180deg,transparent 42%,rgba(5,5,8,.82) 100%),url("+profile.avatar_url+")"}:undefined}>
-    
+   <div className={"profile-cover-art profile-photo-hero "+(profile?.avatar_url?"has-profile-photo":"is-empty-profile")}>
+    {profile?.avatar_url ? <img className="profile-cover-image" src={profile.avatar_url} alt={(profile.display_name||profile.username||"Profile")+" profile photo"} onError={e=>{e.currentTarget.style.display="none"}} /> : <div className="profile-cover-placeholder"><UserRound size={54}/><span>Add a profile photo</span></div>}
+    <div className="profile-cover-shade" aria-hidden="true"></div>
     <div className="profile-hero-bottom"><div className="profile-name-line"><h1>{profile?.display_name||"Your name"}</h1>{profile?.is_verified&&<BadgeCheck className="verified-badge-icon" size={22} aria-label="Verified account"/>}</div><div className="profile-handle">@{profile?.username||"username not set"} {profile?.is_verified&&<span className="verified-badge"><BadgeCheck size={14}/> Verified</span>}</div>{profile?.bio?.trim()&&<p className="profile-hero-bio">{profile.bio}</p>}<div className="profile-hero-actions"><button className="profile-follow-own" onClick={edit}><Edit3 size={15}/> Edit profile</button><button className="profile-share-button" onClick={()=>{const url=window.location.origin+"/?profile="+encodeURIComponent(profile?.username||"");if(navigator.share)void navigator.share({title:(profile?.display_name||"WAYSS profile"),url}).catch(()=>{});else void navigator.clipboard?.writeText(url)}}><Copy size={15}/> Share profile</button></div></div>
    </div>
   </div>
