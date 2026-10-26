@@ -92,3 +92,16 @@
 .mobile-nav{grid-template-columns:repeat(7,minmax(0,1fr))}
 .mobile-nav button{min-width:0;font-size:8px}
 @media(max-width:800px){.profile-cover-art{height:132px}.profile-identity-row{padding:0 14px;gap:11px;align-items:flex-start;flex-wrap:wrap}.wayss-profile-avatar{width:76px;height:76px;flex-basis:76px;margin-top:-28px}.profile-details{flex:1 1 calc(100% - 95px);padding-top:8px}.profile-details h1{font-size:22px}.profile-edit-button{margin-left:auto;margin-top:2px}.profile-microline{padding:14px 14px 0;font-size:8px}.mobile-nav button svg{width:18px;height:18px}}
+
+/* WAYSS navigation + signature profile polish */
+.sidebar nav .nav:has(svg.lucide-message-circle){position:relative;border:1px solid color-mix(in srgb,var(--accent) 20%,transparent)}
+.sidebar nav .nav:has(svg.lucide-message-circle)::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent2);margin-left:auto;box-shadow:0 0 12px var(--accent)}
+.sidebar nav .nav:has(svg.lucide-message-circle):hover,.sidebar nav .nav.active:has(svg.lucide-message-circle){background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 19%,var(--surface2)),var(--surface2));border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
+.wayss-profile-hero{box-shadow:0 18px 55px #0002}
+.profile-cover-art{position:relative;isolation:isolate}
+.profile-cover-art:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 15%,#ffffff0a 48%,transparent 75%);pointer-events:none}
+.wayss-profile-avatar{cursor:pointer;transition:transform .22s ease,box-shadow .22s ease}
+.wayss-profile-avatar:hover{transform:translateY(-3px);box-shadow:0 0 0 2px var(--accent2),0 12px 34px #0006}
+.profile-details>p:last-child{max-width:560px;line-height:1.75;color:var(--muted)}
+.profile-stats .discover-card{transition:transform .2s ease,border-color .2s ease}
+.profile-stats .discover-card:hover{transform:translateY(-2px);border-color:var(--accent)}
