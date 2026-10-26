@@ -167,3 +167,27 @@
 .profile-photo-hero.has-profile-photo:before{background:linear-gradient(180deg,rgba(0,0,0,.02) 0%,transparent 42%,rgba(5,5,8,.84) 100%)!important}
 @media(max-width:800px){.profile-photo-hero{height:clamp(370px,54svh,465px)!important;min-height:370px!important;max-height:465px!important;padding:17px 17px 20px!important}.profile-cinematic{margin-bottom:12px!important}}
 @media(min-width:801px){.profile-photo-hero{height:clamp(430px,58svh,550px)!important;min-height:430px!important;max-height:550px!important}}
+
+/* Compact expandable settings: dense, scannable, mobile-friendly */
+.settings-compact-list{display:grid;gap:8px;margin-top:14px}
+.settings-group{border:1px solid var(--line);border-radius:14px;background:var(--surface2);overflow:hidden}
+.settings-group>summary{list-style:none;cursor:pointer;position:relative;padding:13px 42px 13px 14px;display:flex;flex-direction:column;gap:3px}
+.settings-group>summary::-webkit-details-marker{display:none}
+.settings-group>summary:after{content:"+";position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--muted)}
+.settings-group[open]>summary:after{content:"−"}
+.settings-group>summary span{font-size:13px;font-weight:750;color:var(--text)}
+.settings-group>summary small{font-size:11px;line-height:1.4;color:var(--muted)}
+.settings-group-body{padding:0 14px 12px;border-top:1px solid var(--line)}
+.setting-action{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:39px;padding:9px 0;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--text);font-size:12px;cursor:pointer}
+.setting-action:last-child{border-bottom:0}
+.setting-action span{font-size:19px;color:var(--muted)}
+.setting-action em{font-style:normal;font-size:10px;color:var(--muted);border:1px solid var(--line);padding:3px 6px;border-radius:999px;white-space:nowrap}
+.setting-action.danger{color:#ff7777}
+.settings-inline-form{display:grid;gap:10px;padding:12px 0;font-size:12px}
+.settings-inline-form p{margin:0;color:var(--muted)}
+.settings-inline-form label{display:grid;gap:5px}
+.settings-inline-form input{width:100%;box-sizing:border-box}
+.settings-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:12px 0}
+.settings-theme{min-height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:11px}
+.settings-theme.active{border-color:#9b83ff;background:rgba(139,114,255,.15)}
+.settings-version{padding-top:10px;font-size:11px;color:var(--muted)}
