@@ -204,3 +204,8 @@
 .profile-photo-hero .profile-cover-placeholder{position:absolute!important;inset:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:12px!important;color:rgba(255,255,255,.72)!important;background:radial-gradient(ellipse at 50% 35%,rgba(139,114,255,.28),transparent 55%),linear-gradient(135deg,#171522,#0b0d14)!important;z-index:0!important}
 .profile-photo-hero .profile-cover-placeholder span{font-size:13px!important;letter-spacing:.04em!important}
 @media(max-width:600px){.profile-photo-hero{min-height:310px!important}}
+
+/* Keep the fallback hidden over valid avatars, but show it if the stored image URL fails. */
+.profile-photo-hero .profile-cover-placeholder{display:none!important}
+.profile-photo-hero.is-empty-profile .profile-cover-placeholder,.profile-photo-hero.profile-image-failed .profile-cover-placeholder{display:flex!important}
+.profile-photo-hero.profile-image-failed .profile-cover-image{display:none!important}
