@@ -16,6 +16,22 @@ const ago=(v:string)=>{const s=Math.max(1,Math.floor((Date.now()-new Date(v).get
 const ext=(f:File)=>f.name.split(".").pop()?.toLowerCase()||"bin";
 
 export default function AppV3(){
+ useEffect(()=>{
+  const applyTheme=(name:string)=>{
+   const normalized=name.toLowerCase().replaceAll(" ","-");
+   document.documentElement.dataset.theme=normalized;
+   const light=name==="Light"||(name==="System Default"&&window.matchMedia("(prefers-color-scheme: light)").matches);
+   document.documentElement.classList.toggle("wayss-theme-light",light);
+   document.documentElement.style.colorScheme=light?"light":"dark";
+  };
+  const saved=localStorage.getItem("wayss-theme")||"Dark";
+  applyTheme(saved);
+  const media=window.matchMedia("(prefers-color-scheme: light)");
+  const handleSystem=()=>{if((localStorage.getItem("wayss-theme")||"Dark")==="System Default")applyTheme("System Default")};
+  media.addEventListener?.("change",handleSystem);
+  return()=>media.removeEventListener?.("change",handleSystem);
+ },[]);
+
  const[screen,setScreen]=useState<Screen>("Feed"),[pendingChatPeer,setPendingChatPeer]=useState<any>(null),[q,setQ]=useState(""),[feedMode,setFeedMode]=useState<"for-you"|"connected">("for-you"),[user,setUser]=useState<any>(null),[profile,setProfile]=useState<Profile|null>(null),[posts,setPosts]=useState<Post[]>([]),[busy,setBusy]=useState(true),[error,setError]=useState(""),[auth,setAuth]=useState(false),[email,setEmail]=useState(""),[emailUsername,setEmailUsername]=useState(""),[password,setPassword]=useState(""),[authMsg,setAuthMsg]=useState(""),[composer,setComposer]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[edit,setEdit]=useState(false),[people,setPeople]=useState<Person[]>([]),[peopleBusy,setPeopleBusy]=useState(false),[peopleError,setPeopleError]=useState(""),[commentsPost,setCommentsPost]=useState<Post|null>(null),[notices,setNotices]=useState<Notice[]>([]),[noticeOpen,setNoticeOpen]=useState(false),[editingPost,setEditingPost]=useState<Post|null>(null),[editBody,setEditBody]=useState(""),[fluxPosts,setFluxPosts]=useState<any[]>([]),[fluxBusy,setFluxBusy]=useState(false),[fluxUploading,setFluxUploading]=useState(false),[fluxError,setFluxError]=useState("");
  useEffect(()=>{const openChat=(event:Event)=>{const peer=(event as CustomEvent<any>).detail;if(peer?.id){setPendingChatPeer(peer);setScreen("Messages")}};window.addEventListener("wayss:start-chat",openChat);return()=>window.removeEventListener("wayss:start-chat",openChat)},[]);
  useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>setUser(data.session?.user||null));const{data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setUser(s?.user||null));return()=>subscription.unsubscribe()},[]);
