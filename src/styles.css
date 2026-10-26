@@ -191,3 +191,11 @@
 .settings-theme{min-height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:11px}
 .settings-theme.active{border-color:#9b83ff;background:rgba(139,114,255,.15)}
 .settings-version{padding-top:10px;font-size:11px;color:var(--muted)}
+
+/* WAYSS selectable appearance palettes */
+:root[data-theme="red-cherry"]{--bg:#16080d;--surface:#211018;--surface2:#2b121c;--text:#fff0f3;--muted:#c9a4af;--line:#532436;--accent:#ff456d}
+:root[data-theme="midnight-blue"]{--bg:#060d1b;--surface:#0c1729;--surface2:#11223a;--text:#edf5ff;--muted:#9fb5d1;--line:#233d5e;--accent:#6ca9ff}
+:root[data-theme="aurora"]{--bg:#071411;--surface:#0e211e;--surface2:#142d29;--text:#edfff8;--muted:#9ec9bb;--line:#28564a;--accent:#5de0bc}
+:root[data-theme="graphite"]{--bg:#111315;--surface:#191c1f;--surface2:#222629;--text:#f2f4f5;--muted:#a6adb3;--line:#363c41;--accent:#b8c1ca}
+:root[data-theme="lavender"]{--bg:#100d1b;--surface:#1c172a;--surface2:#272039;--text:#f8f2ff;--muted:#c0b1d8;--line:#49375f;--accent:#bd9aff}
+:root.wayss-theme-light{--bg:#f5f6fa;--surface:#fff;--surface2:#eceef4;--text:#171923;--muted:#626778;--line:#d9dce6;--accent:#7356d8}
