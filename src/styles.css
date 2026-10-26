@@ -167,4 +167,3 @@
 .profile-photo-hero.has-profile-photo:before{background:linear-gradient(180deg,rgba(0,0,0,.02) 0%,transparent 42%,rgba(5,5,8,.84) 100%)!important}
 @media(max-width:800px){.profile-photo-hero{height:clamp(370px,54svh,465px)!important;min-height:370px!important;max-height:465px!important;padding:17px 17px 20px!important}.profile-cinematic{margin-bottom:12px!important}}
 @media(min-width:801px){.profile-photo-hero{height:clamp(430px,58svh,550px)!important;min-height:430px!important;max-height:550px!important}}
-}
