@@ -194,18 +194,3 @@
  .profile-photo-hero .profile-hero-bottom{animation:profileDockIn .45s cubic-bezier(.2,.8,.2,1) both}
  @keyframes profileDockIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 }
-
-
-/* Reliable profile photo rendering: use a real image element, not only background-image. */
-.profile-photo-hero{position:relative!important;display:flex!important;flex-direction:column!important;justify-content:flex-end!important;overflow:hidden!important;min-height:340px!important;background:#11131b!important;background-image:none!important}
-.profile-photo-hero .profile-cover-image{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center 35%!important;z-index:0!important}
-.profile-photo-hero .profile-cover-shade{position:absolute!important;inset:0!important;z-index:1!important;pointer-events:none!important;background:linear-gradient(180deg,rgba(5,5,8,.02) 25%,rgba(5,5,8,.18) 48%,rgba(5,5,8,.88) 100%)!important}
-.profile-photo-hero .profile-hero-bottom{z-index:2!important}
-.profile-photo-hero .profile-cover-placeholder{position:absolute!important;inset:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:12px!important;color:rgba(255,255,255,.72)!important;background:radial-gradient(ellipse at 50% 35%,rgba(139,114,255,.28),transparent 55%),linear-gradient(135deg,#171522,#0b0d14)!important;z-index:0!important}
-.profile-photo-hero .profile-cover-placeholder span{font-size:13px!important;letter-spacing:.04em!important}
-@media(max-width:600px){.profile-photo-hero{min-height:310px!important}}
-
-/* Keep the fallback hidden over valid avatars, but show it if the stored image URL fails. */
-.profile-photo-hero .profile-cover-placeholder{display:none!important}
-.profile-photo-hero.is-empty-profile .profile-cover-placeholder,.profile-photo-hero.profile-image-failed .profile-cover-placeholder{display:flex!important}
-.profile-photo-hero.profile-image-failed .profile-cover-image{display:none!important}
