@@ -6,7 +6,9 @@ type Person={id:string;username:string|null;display_name:string|null;avatar_url:
 type Msg={id:string;conversation_id:string;sender_id:string;body:string|null;media_url:string|null;media_type:string|null;created_at:string;read_at?:string|null};
 type Thread={id:string;peer:Person;last?:Msg|null;muted:boolean};
 type Call={id:string;conversation_id:string;caller_id:string;callee_id:string;media_type:"audio"|"video";status:string;offer:any;answer:any;caller_candidates:any[];callee_candidates:any[];created_at:string};
-const RTC_CONFIG:RTCConfiguration={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]};
+const rtcEnv=(import.meta as any).env||{};
+const turnUrl=String(rtcEnv.VITE_TURN_URL||"").trim();
+const RTC_CONFIG:RTCConfiguration={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"},...(turnUrl?[{urls:turnUrl,username:String(rtcEnv.VITE_TURN_USERNAME||""),credential:String(rtcEnv.VITE_TURN_CREDENTIAL||"")}]:[])]};
 const initials=(p:any)=>String(p?.display_name||p?.username||"W").trim().slice(0,1).toUpperCase();
 const time=(s:string)=>new Date(s).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 export default function Messages({user,people,onNeedSignIn,active=true,initialPeer,onPeerHandled}:any){
