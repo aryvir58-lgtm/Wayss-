@@ -58,6 +58,11 @@ No local Node.js install is required.
 - Accessibility-minded controls
 - Reduced-motion support
 
+### Story and calling configuration
+
+- Stories use `posts.kind = 'story'` and expire after 2 hours. For an existing Supabase project, run `supabase/migrations/202610290001_story_expiry.sql` in the Supabase SQL Editor after merging this change.
+- Voice/video calls use WebRTC. The app now plays the remote audio stream and attempts a ring tone, but STUN-only connections are not reliable on every network. For stronger connectivity, configure a TURN service in the hosting dashboard with `VITE_TURN_URL`, `VITE_TURN_USERNAME`, and `VITE_TURN_CREDENTIAL`. Never commit TURN credentials to the repository.
+
 ### 4. What still needs backend implementation
 
 This ZIP deliberately does not fake functionality. The next implementation pass should connect the UI to the schema and add:
