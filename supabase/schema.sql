@@ -34,7 +34,7 @@ create table if not exists public.blocks (
 create table if not exists public.posts (
   id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.profiles(id) on delete cascade,
-  kind text not null check (kind in ('echo','signal','glimpse','flux')),
+  kind text not null check (kind in ('echo','signal','glimpse','flux','story')),
   body text,
   media_url text,
   audience text not null default 'public' check (audience in ('public','connections','private')),
