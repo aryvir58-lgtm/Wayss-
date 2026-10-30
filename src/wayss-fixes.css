@@ -206,3 +206,41 @@
   .mobile-nav button{flex:1 0 58px;min-width:58px;position:relative}
   .mobile-nav .mobile-notification-count{right:calc(50% - 24px);top:2px}
 }
+
+
+/* WAYS S brand refresh: dark pink + navy, with the floating Quick Center */
+:root{
+  --wayss-accent:#F32950;
+  --wayss-accent2:#55AAFF;
+  --wayss-glow:rgba(243,41,80,.18);
+  --wayss-theme-accent:#F32950;
+  --wayss-theme-accent2:#55AAFF;
+  --wayss-theme-glow:rgba(243,41,80,.18);
+  --bg:#08090D;
+  --surface:#101116;
+  --surface2:#17181F;
+  --border:#262832;
+  --text:#F5F5F7;
+  --muted:#9296A3;
+  --accent:#F32950;
+  --accent2:#55AAFF;
+}
+html[data-theme=dark]{--bg:#08090D;--surface:#101116;--surface2:#17181F;--border:#262832;--text:#F5F5F7;--muted:#9296A3;--accent:#F32950;--accent2:#55AAFF;--wayss-theme-accent:#F32950;--wayss-theme-accent2:#55AAFF;--wayss-theme-glow:rgba(243,41,80,.18)}
+.mobile-nav{display:none!important}
+.wayss-quick-center{position:fixed;z-index:1200;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;font-family:inherit}
+.quick-center-logo{width:56px;height:56px;flex:0 0 56px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,255,255,.18);color:#fff;background:rgba(16,17,22,.82);backdrop-filter:blur(22px);box-shadow:0 8px 32px rgba(0,0,0,.38),0 0 24px rgba(243,41,80,.13);position:relative}
+.quick-center-mark{font-weight:900;font-size:22px;letter-spacing:-.1em;padding-right:3px}
+.quick-center-alert{position:absolute;right:3px;top:3px;width:10px;height:10px;border-radius:50%;background:#F32950;border:2px solid #101116}
+.quick-center-bar{display:flex;align-items:center;gap:5px;padding:8px;border:1px solid rgba(255,255,255,.13);border-radius:24px;background:rgba(16,17,22,.88);backdrop-filter:blur(24px);box-shadow:0 12px 42px rgba(0,0,0,.4);animation:wayssQuickIn .18s ease-out;max-width:calc(100vw - 94px)}
+.quick-center-bar>button,.quick-center-create-wrap>button{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;min-width:42px;padding:0 12px;border-radius:16px;background:transparent;border:1px solid transparent;color:#c4c6ce;white-space:nowrap}
+.quick-center-bar>button:hover,.quick-center-create-wrap>button:hover{background:rgba(243,41,80,.12);color:#fff;border-color:rgba(243,41,80,.25)}
+.quick-center-bar>button span{font-size:12px}
+.quick-center-create-wrap{position:relative}
+.quick-center-create-wrap>.quick-center-plus{background:#F32950;color:white;border-radius:15px;min-width:44px}
+.quick-center-bar .quick-center-close{min-width:30px;width:30px;padding:0;border-left:1px solid rgba(255,255,255,.1);border-radius:0 14px 14px 0}
+.quick-center-popover{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translateX(-50%);min-width:116px;padding:6px;border:1px solid #33343d;border-radius:16px;background:#101116;box-shadow:0 12px 35px #0009;display:grid;gap:4px}
+.quick-center-popover button{border:0;background:transparent;color:#F5F5F7;text-align:left;padding:10px 12px;border-radius:10px}
+.quick-center-popover button:hover{background:#F3295020}
+@keyframes wayssQuickIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:520px){.wayss-quick-center{left:12px;bottom:max(12px,env(safe-area-inset-bottom));gap:7px}.quick-center-logo{width:50px;height:50px;flex-basis:50px}.quick-center-bar{gap:1px;padding:5px;border-radius:20px;max-width:calc(100vw - 70px)}.quick-center-bar>button,.quick-center-create-wrap>button{min-width:34px;min-height:40px;padding:0 7px;border-radius:13px}.quick-center-bar>button span{display:none}.quick-center-create-wrap>.quick-center-plus{min-width:38px}.quick-center-bar .quick-center-close{min-width:24px;width:24px}}
+@media(prefers-reduced-motion:reduce){.quick-center-bar{animation:none}}
