@@ -62,7 +62,7 @@ else if (!s.includes('mobile-user-search-button')) throw new Error("WAYSS top ac
 const oldMobileNav = '</div><div className="mobile-nav">{nav.map(([n,I]:any)=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)}><I size={20}/><span>{n}</span></button>)}<button className={noticeOpen?"active":""} onClick={()=>{setNoticeOpen(true);markRead()}} aria-label="Notifications"><Bell size={20}/><span>Alerts</span>{unread>0&&<i className="mobile-notification-count">{unread>9?"9+":unread}</i>}</button></div>';
 const newMobileNav = '</div><div className="mobile-nav">{nav.map(([n,I]:any)=><button key={n} className={screen===n?"active":""} onClick={()=>n==="Create"?setComposer(true):setScreen(n)} aria-label={n}><I size={20}/><span>{n}</span></button>)}</div>';
 if (s.includes(oldMobileNav)) s=s.replace(oldMobileNav,newMobileNav);
-else if (!s.includes('mobile-nav">{nav.map')) throw new Error("WAYSS mobile navigation block was not found.");
+else if (!s.includes('mobile-nav">{nav.map') && !s.includes('wayss-quick-center')) throw new Error("WAYSS mobile navigation block was not found.");
 
 
 const cssPath = "src/wayss-fixes.css";
